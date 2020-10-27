@@ -1,4 +1,6 @@
 /*
+    MINE
+
     Enki - a fast 2D robot simulator
     Copyright (C) 2017 Bernd Porr <mail@berndporr.me.uk>
     Copyright (C) 1999-2016 Stephane Magnenat <stephane at magnenat dot net>
@@ -41,6 +43,7 @@ It has also a camera which looks to the front and IR sensors
 #include "ros/ros.h" //these have to go first for some reason...
 #include "sensor_msgs/Image.h"
 #include "geometry_msgs/Twist.h"
+#include "std_msgs/Bool.h"
 #include <ros/package.h>
 
 #include <Enki.h>
@@ -55,10 +58,12 @@ It has also a camera which looks to the front and IR sensors
 #include <iomanip>
 #include <iostream>
 #include "Racer.h"
+//#include "Reversal.h"
 
 #include "bandpass.h"
 #include "parameters.h"
 #include <chrono>
+#include "PhysicalEngine.h"
 
 #define reflex
 
@@ -75,7 +80,23 @@ int learningRateCount =0;
 int firstStep =1; //so that it does propInputs once and then back/forth in that order
 
 int nInputs= ROW1N+ROW2N+ROW3N; //this cannot be an odd number for icoLearner
+bool rewardBool;
+//std_msgs::Bool reward;
+//reward.data = false;
 
+//move this to its own file and header
+//bool rewardBool(float ratx,float raty, float pelx, float pely)
+//{
+//    if (sqrt((ratx - pelx)*(ratx - pelx)+(raty - pely)*(raty - pely))<13.0)
+//    {	//robot half length + food radius = 10+2 = 12
+//        reward = true; 
+//    }
+//    else
+//    {
+//        reward = false;
+//    }
+//    return reward;
+//}
 
 class EnkiPlayground : public EnkiWidget
 {
@@ -93,6 +114,7 @@ private:
         //both will be 30 speed //used to multiply by 18
         racer->leftSpeed = (angular_speed*50.0) + 30.0;
         racer->rightSpeed = (angular_speed*(-50.0)) + 30.0;
+
         /**********************
          * 
          * MIGHT NEED TO CHANGE MULTIPLICATION HERE DEPENDING ON NEURAL NET OUTPUT VALUE....
@@ -102,10 +124,12 @@ private:
 
 protected:
 	Racer* racer;
+    PhysicalObject* pellet;
     double speed = SPEED;
     double prevX;
     double prevY;
     double prevA;
+    
 
     FILE* errorlog = NULL;
     FILE* fcoord = NULL;
@@ -118,6 +142,14 @@ protected:
     ros::Publisher line_sensor_pub[8];
     //publisher to output the 9x9 'front camera'
     ros::Publisher camera_pub;
+    //publisher to colour camera
+    ros::Publisher camera_pub_colour;
+    //publisher to is_Rewarded (if rat gets reward)
+    ros::Publisher reward_publish;
+    //publisher to in_Place (if rat in assigned place)
+    ros::Publisher place_publish;
+    //publisher for is_Seen (if rat sees reward)
+    ros::Publisher seen_publish;
     //subscriber for the motor control messages
     ros::Subscriber sub;
 
@@ -137,6 +169,12 @@ public:
         line_sensor_pub[7] = nh.advertise<sensor_msgs::Image>("mybot/right_sensor4/image_raw",1);
 
         camera_pub = nh.advertise<sensor_msgs::Image>("mybot/camera1/image_raw", 1);
+        camera_pub_colour = nh.advertise<sensor_msgs::Image>("mybot/colour_camera/image_raw", 1);
+
+        //Reversal publishers
+        reward_publish = nh.advertise<std_msgs::Bool>("mybot/isRewarded",1);
+        place_publish = nh.advertise<std_msgs::Bool>("mybot/inPlace",1);
+        seen_publish = nh.advertise<std_msgs::Bool>("mybot/isSeen", 1);
 
         sub = nh.subscribe("mybot/cmd_vel", 1, &EnkiPlayground::motors_callback, this);
 
@@ -162,6 +200,12 @@ public:
         racer->setPreds(12, 9, 2);
         racer->setPreds(10, 9, 2); //10 is front of robot, since robot is 20long and 10wide
 
+        pellet = new PhysicalObject();
+        pellet->setCylindric(2,2,100);
+        pellet->setColor(Enki::Color(1,0,0)); //Enki::Color(R,G,B) so (1,0,0) = true red = rgb8
+        pellet->pos = Point((maxx*9/50),(maxy*4/5 -20));
+        world->addObject(pellet);
+
     }
 
     ~EnkiPlayground(){
@@ -171,6 +215,7 @@ public:
             line_sensor_pub[i].shutdown();
         }
         camera_pub.shutdown();
+        camera_pub_colour.shutdown();
     }
 	// here we do all the behavioural computations
 	// as an example: line following and obstacle avoidance
@@ -210,7 +255,7 @@ virtual void sceneCompletedHook()
         //publish the camera stuff
         msg.height = 9;
         msg.width = 9;
-        msg.step = 9; //i think the step for one row?
+        msg.step = 9; 
 
         msg.data.pop_back();
         for(int i=0; i<9; i++){
@@ -222,6 +267,101 @@ virtual void sceneCompletedHook()
 
         camera_pub.publish(msg);
 
+        //add colour camera
+	    msg.encoding = "rgba8";
+	    msg.height = 9;
+        msg.width = 9;
+        msg.step = 9*4; 
+
+        msg.data.pop_back();
+	    for(int i=0; i<81; i++)
+        {
+		  msg.data.push_back(uint8_t(racer->rgbcamera.image[i].r()*255.0));
+		  msg.data.push_back(uint8_t(racer->rgbcamera.image[i].g()*255.0));
+		  msg.data.push_back(uint8_t(racer->rgbcamera.image[i].b()*255.0));
+		  msg.data.push_back(uint8_t(racer->rgbcamera.image[i].a()*255.0));
+	    }
+	    msg.data.resize(9*4*9);
+   	    camera_pub_colour.publish(msg);
+
+        //------------Move everything inside to headers-----------
+        //set robot back if it gets very close to food
+	    if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<13.0)
+        {	//robot half length + food radius = 10+2 = 12
+		    racer->pos = Point(maxx/2, maxy/2 -30); //return racer to start point
+            rewardBool = true;  
+        }
+
+        else
+        {
+            rewardBool = false;
+        }
+        
+        //-------------------------------------------------------------
+    
+        // return pellet to start point in case of collision (shouldnt happen but sometimes does)
+        if ( pellet->speed.x != 0)
+        {
+            pellet->speed.x=0;
+            pellet->speed.y=0;
+            pellet->pos = Point((maxx*9/50),(maxy*4/5 -20));
+        }
+        //-------------------------------------------------------------
+
+        //Write bool true if within set circle. (make this a function when you work out how to pass racer->pos into a function...)
+        double circleOnex = maxx*9/50;
+        double circleOney = (maxy*4/5 -20);
+        double circleOneRad = 20;
+        bool placeBool = 0;
+
+        if (((racer->pos.x >= (circleOnex - circleOneRad)) && (racer->pos.x <= (circleOnex + circleOnex))) && ((racer->pos.y <= (circleOney + circleOneRad)) && (racer->pos.y >= (circleOney - circleOneRad))))
+        {
+            placeBool = 1;
+        }
+        else
+        {
+            placeBool = 0;
+        }
+        //---------------------------------------------------------
+
+        //reward seen.
+        static int vision[9]; //fix this later (if im right and it needs fixed)
+        bool seenBool = 0;
+        //sensor_msgs::Image fov.data[324]; //field of view data 
+        //for (int i=0; i<8; i++)
+        //ROS_INFO("%d", fov.data[0]);
+        //{
+          //vision[i] = fov[((81*1)+i*9+5)];
+        //}
+        
+        //if((vision[8] != vision[2]) ||(vision[7] != vision[3]) || (vision[6] != vision[4]))
+        //{
+        //    seenBool = 1;
+        //}
+        
+        //else
+        //{
+        //    seenBool = 0;
+        //}
+        
+        //camera_pub_colour->data
+        //if((sensor_values[8]/255.0) - (sensor_values[2]/255.0) != 0||(sensor_values[7]/255.0) -(sensor_values[3]/255.0) != 0||(sensor_values[6]/255.0) - (sensor_values[4]/255.0) != 0){
+	
+
+
+
+        //Reversal publishing
+        std_msgs::Bool reward; //bool message for if rat is at reward
+        std_msgs::Bool place;
+        std_msgs::Bool seen; //make this a custom msg later, add distance
+        
+        reward.data = rewardBool; //true if rat very close
+        place.data = placeBool;
+        seen.data = seenBool;
+        
+        reward_publish.publish(reward);
+        place_publish.publish(place);
+        seen_publish.publish(seen);
         ros::spinOnce();
 
 #ifdef reflex
@@ -253,7 +393,7 @@ int main(int argc, char *argv[])
     //Creating combpath which directs to our texture file location
 	std::string pckpath = ros::package::getPath("enki_ros_pck"); //C++ string path to enki_ros_pck package folder
 	QString qtpckpath = QString::fromStdString(pckpath); //convert to QString
-	QString qtfile = QString().sprintf("/cc.png"); //convert /file_name.png to QString
+	QString qtfile = QString().sprintf("/circles.png"); //convert /file_name.png to QString
 	QString combpath = qtpckpath + qtfile; //combine both QStrings
     gt = QGLWidget::convertToGLFormat(QImage(combpath)); 
     if (gt.isNull()) {
@@ -264,6 +404,8 @@ int main(int argc, char *argv[])
     World world(maxx, maxy,
                 Color(1000, 1000, 1000), World::GroundTexture(gt.width(), gt.height(), bits));
     cout<<gt.width()<<" "<<gt.height()<<endl;
+
+    //getCoordinates();
 
     ros::init(argc,argv,"enki_node");
 

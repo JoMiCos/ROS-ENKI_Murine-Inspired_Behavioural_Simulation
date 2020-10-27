@@ -67,6 +67,7 @@ namespace Enki
         IRSensor infraredSensorRight;
 		//! Linear camera
 		CircularCam camera;
+		CircularCam rgbcamera;
 
 
 		//! Ground Sensor left

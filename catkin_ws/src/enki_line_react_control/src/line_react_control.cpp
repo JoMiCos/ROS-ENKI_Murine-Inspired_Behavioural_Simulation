@@ -30,6 +30,7 @@ void calculateMotorSpeeds(geometry_msgs::Twist& msg){
 	//msg.angular.y = 30 - error;	
 	
 	msg.angular.z = error;
+	msg.linear.x = 10;
 	
 	
 
