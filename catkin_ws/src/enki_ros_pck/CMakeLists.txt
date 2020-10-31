@@ -28,3 +28,7 @@ include_directories(/usr/local/include/enki)
 
 add_executable(robot ${SOURCES})
 target_link_libraries(robot ${catkin_LIBRARIES} ${enki_LIBRARY} Qt5::OpenGL Qt5::Widgets GL)
+
+#catkin_install_python(PROGRAMS py_plot/topic_plot.py
+#  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)

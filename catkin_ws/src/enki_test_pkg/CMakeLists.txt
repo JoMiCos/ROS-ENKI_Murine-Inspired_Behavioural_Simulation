@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   sensor_msgs
   std_msgs
+  rospy
 )
 
 ## System dependencies are found with CMake's conventions
@@ -104,7 +105,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES enki_test_pkg
 #  CATKIN_DEPENDS roscpp
 #  DEPENDS system_lib
@@ -165,9 +166,8 @@ target_link_libraries(my_enki_test
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
 ## Mark executable scripts (Python etc.) for installation
-## in contrast to setup.py, you can choose the destination
-# catkin_install_python(PROGRAMS
-#   scripts/my_python_script
+## in contrast to setup.py, you can choose the destination  #catkin_install_python(PROGRAMS
+#   enki_ros_pck/topic_plot.py
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 

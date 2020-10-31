@@ -58,7 +58,7 @@ It has also a camera which looks to the front and IR sensors
 #include <iomanip>
 #include <iostream>
 #include "Racer.h"
-//#include "Reversal.h"
+//#include "ReversalSignals.h"
 
 #include "bandpass.h"
 #include "parameters.h"
@@ -80,23 +80,48 @@ int learningRateCount =0;
 int firstStep =1; //so that it does propInputs once and then back/forth in that order
 
 int nInputs= ROW1N+ROW2N+ROW3N; //this cannot be an odd number for icoLearner
-bool rewardBool;
-//std_msgs::Bool reward;
+//bool rewardBool;
+std_msgs::Bool reward;
 //reward.data = false;
 
 //move this to its own file and header
-//bool rewardBool(float ratx,float raty, float pelx, float pely)
+//void rewardBool(float ratx, float raty, float pelx, float pely, std_msgs::Bool& reward) // (racer->pos, pellet->pos)
 //{
-//    if (sqrt((ratx - pelx)*(ratx - pelx)+(raty - pely)*(raty - pely))<13.0)
-//    {	//robot half length + food radius = 10+2 = 12
-//        reward = true; 
-//    }
-//    else
-//    {
-//        reward = false;
-//    }
-//    return reward;
+   //ROS_INFO("%s", "Entered Function");
+  //  if (sqrt((ratx - pelx)*(ratx - pelx)+(raty - pely)*(raty - pely))<13.0)
+   // {	//robot half length + food radius = 10+2 = 12
+   //     reward.data = true; 
+        //ROS_INFO("%s", "Entered True");
+   // }
+   // else
+   // {
+        //ROS_INFO("%f", "pelx");
+   //     reward.data = false;
+   // }
+    
 //}
+
+void rewardBool(Enki::Racer* racer, Enki::PhysicalObject* pellet, std_msgs::Bool& reward, double maxx, double maxy) // (racer->pos, pellet->pos)
+{
+   // ROS_INFO("%f", racer->pos.x);
+   // ROS_INFO("%f", racer->pos.y);
+   // ROS_INFO("%f", pellet->pos.x);
+   // ROS_INFO("%f", pellet->pos.x);
+    //ROS_INFO("%f",sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x))+sqrt((racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y)));
+    if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<13.0)
+    {	//robot half length + food radius = 10+2 = 12
+        reward.data = true; 
+        racer->pos = Point(maxx/2, maxy/2 -30);
+    //    ROS_INFO("%s", "Entered True");
+    }
+    else
+    {
+        //ROS_INFO("%f", "pellet->pos.x");
+        reward.data = false;
+    }
+    
+}
+
 
 class EnkiPlayground : public EnkiWidget
 {
@@ -286,16 +311,16 @@ virtual void sceneCompletedHook()
 
         //------------Move everything inside to headers-----------
         //set robot back if it gets very close to food
-	    if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<13.0)
-        {	//robot half length + food radius = 10+2 = 12
-		    racer->pos = Point(maxx/2, maxy/2 -30); //return racer to start point
-            rewardBool = true;  
-        }
+	    //if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<13.0)
+        //{	//robot half length + food radius = 10+2 = 12
+		    //racer->pos = Point(maxx/2, maxy/2 -30); //return racer to start point
+            //rewardBool = true;  
+        //}
 
-        else
-        {
-            rewardBool = false;
-        }
+        //else
+        //{
+            //rewardBool = false;
+        //}
         
         //-------------------------------------------------------------
     
@@ -346,16 +371,15 @@ virtual void sceneCompletedHook()
         
         //camera_pub_colour->data
         //if((sensor_values[8]/255.0) - (sensor_values[2]/255.0) != 0||(sensor_values[7]/255.0) -(sensor_values[3]/255.0) != 0||(sensor_values[6]/255.0) - (sensor_values[4]/255.0) != 0){
-	
-
-
+        
 
         //Reversal publishing
         std_msgs::Bool reward; //bool message for if rat is at reward
         std_msgs::Bool place;
         std_msgs::Bool seen; //make this a custom msg later, add distance
         
-        reward.data = rewardBool; //true if rat very close
+        //reward.data = rewardBool; //true if rat very close
+        rewardBool(racer, pellet, reward, maxx, maxy);
         place.data = placeBool;
         seen.data = seenBool;
         
