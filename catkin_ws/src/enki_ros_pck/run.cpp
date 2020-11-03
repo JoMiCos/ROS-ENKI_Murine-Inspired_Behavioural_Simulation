@@ -33,18 +33,13 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
-
-/*
-Custom Robot example which has ground sensors and follows a line
-It has also a camera which looks to the front and IR sensors
-*/
-
 //#include <../../enki/Enki.h>
 #include "ros/ros.h" //these have to go first for some reason...
 #include "sensor_msgs/Image.h"
 #include "geometry_msgs/Twist.h"
 #include "std_msgs/Bool.h"
 #include <ros/package.h>
+#include "enki_ros_pck/Sight.h"
 
 #include <Enki.h>
 #include <QApplication>
@@ -58,6 +53,7 @@ It has also a camera which looks to the front and IR sensors
 #include <iomanip>
 #include <iostream>
 #include "Racer.h"
+#include <stdlib.h>
 //#include "ReversalSignals.h"
 
 #include "bandpass.h"
@@ -120,6 +116,16 @@ void rewardBool(Enki::Racer* racer, Enki::PhysicalObject* pellet, std_msgs::Bool
         reward.data = false;
     }
     
+}
+
+void getDistance(Enki::Racer* racer, Enki::PhysicalObject* pellet, enki_ros_pck::Sight sight)
+{
+    float xdistance = sqrt((racer->pos.x -  pellet->pos.x)*(racer->pos.x -  pellet->pos.x));
+    float ydistance = sqrt((racer->pos.y - pellet->pos.y) * (racer->pos.y- pellet->pos.y));
+    float direct_distance = sqrt((xdistance*xdistance)+(ydistance*ydistance)) -13; //13 = halflength of robot
+    ROS_INFO("%f",direct_distance);
+    sight.distance = direct_distance;
+
 }
 
 
@@ -199,8 +205,8 @@ public:
         //Reversal publishers
         reward_publish = nh.advertise<std_msgs::Bool>("mybot/isRewarded",1);
         place_publish = nh.advertise<std_msgs::Bool>("mybot/inPlace",1);
-        seen_publish = nh.advertise<std_msgs::Bool>("mybot/isSeen", 1);
-
+        //seen_publish = nh.advertise<std_msgs::Bool>("mybot/isSeen", 1);
+        seen_publish = nh.advertise<enki_ros_pck::Sight>("mybot/isSeen",1);
         sub = nh.subscribe("mybot/cmd_vel", 1, &EnkiPlayground::motors_callback, this);
 
 #ifdef reflex
@@ -251,7 +257,6 @@ virtual void sceneCompletedHook()
 	{
         /*
         int errorGain = ERRORGAIN;
-
 		double leftGround = racer->groundSensorLeft.getValue();
 		double rightGround = racer->groundSensorRight.getValue();
         double error = (leftGround - rightGround);
@@ -352,23 +357,59 @@ virtual void sceneCompletedHook()
         //reward seen.
         static int vision[9]; //fix this later (if im right and it needs fixed)
         bool seenBool = 0;
-        //sensor_msgs::Image fov.data[324]; //field of view data 
-        //for (int i=0; i<8; i++)
-        //ROS_INFO("%d", fov.data[0]);
-        //{
-          //vision[i] = fov[((81*1)+i*9+5)];
-        //}
+        //sensor_msgs::Image fov;
+        //sensor_msgs::Image
+        //msg.data[324]; //field of view data 
+               
+        for (int i=0; i<7; i++)
+        {
+          vision[i] = msg.data[((80)+(i*16))]; //creates array of all R values from RGB vision-array (reward is pure red so == (255,0,0) uintRGB - R value every 4 but that makes it lag so 16
+        }
         
+       // why is the rat blind on the left side?
+
         //if((vision[8] != vision[2]) ||(vision[7] != vision[3]) || (vision[6] != vision[4]))
-        //{
-        //    seenBool = 1;
-        //}
+        if( vision[0]==255 || vision[1]==255 || vision[2]==255 || vision[3]==255 || vision[4]==255 || vision[5]==255 || vision[6]==255 || vision[7]==255 || vision[8]==255 || vision[9]==255 || vision[10]==255 || vision[11]==255 || vision[12]==255 || vision[13]==255 || vision[14]==255 || vision[15]==255 || vision[16]==255 || vision[17]==255 || vision[18]==255 || vision[19]==255 || vision[20]==255 || vision[21]==255 || vision[22]==255 || vision[23]==255 || vision[24]==255 || vision [25]==255 || vision[26]==255 || vision[27]==255)        
+        {
+           /* ROS_INFO("%s","____________");
+            ROS_INFO("%d",vision[0]);
+            ROS_INFO("%d",vision[1]);
+            ROS_INFO("%d",vision[2]);
+            ROS_INFO("%d",vision[3]);
+            ROS_INFO("%d",vision[4]);
+            ROS_INFO("%d",vision[5]);
+            ROS_INFO("%d",vision[6]);
+            ROS_INFO("%d",vision[7]);
+            ROS_INFO("%d",vision[8]);
+            ROS_INFO("%d",vision[9]);
+            ROS_INFO("%d",vision[10]);
+            ROS_INFO("%d",vision[11]);
+            ROS_INFO("%d",vision[12]);
+            ROS_INFO("%d",vision[13]);
+            ROS_INFO("%d",vision[14]);
+            ROS_INFO("%d",vision[15]);
+            ROS_INFO("%d",vision[16]);
+            ROS_INFO("%d",vision[17]);
+            ROS_INFO("%d",vision[18]);
+            ROS_INFO("%d",vision[19]);
+            ROS_INFO("%d",vision[20]);
+            ROS_INFO("%d",vision[21]);
+            ROS_INFO("%d",vision[22]);
+            ROS_INFO("%d",vision[23]);
+            ROS_INFO("%d",vision[24]);
+            ROS_INFO("%d",vision[25]);
+            ROS_INFO("%d",vision[26]);
+            ROS_INFO("%d",vision[27]); */
+
+    
+            seenBool = true;
+        }
         
-        //else
-        //{
-        //    seenBool = 0;
-        //}
-        
+        else
+        {
+            
+            seenBool = false;
+        }
         //camera_pub_colour->data
         //if((sensor_values[8]/255.0) - (sensor_values[2]/255.0) != 0||(sensor_values[7]/255.0) -(sensor_values[3]/255.0) != 0||(sensor_values[6]/255.0) - (sensor_values[4]/255.0) != 0){
         
@@ -376,13 +417,17 @@ virtual void sceneCompletedHook()
         //Reversal publishing
         std_msgs::Bool reward; //bool message for if rat is at reward
         std_msgs::Bool place;
-        std_msgs::Bool seen; //make this a custom msg later, add distance
-        
+        //std_msgs::Bool seen; //make this a custom msg later, add distance
+        enki_ros_pck::Sight seen;
+
         //reward.data = rewardBool; //true if rat very close
         rewardBool(racer, pellet, reward, maxx, maxy);
         place.data = placeBool;
-        seen.data = seenBool;
+        seen.sight = seenBool;
+        getDistance(racer, pellet, seen);
         
+    /// Delete this second section - try not using custom msg and see if that fixes tilt...
+
         reward_publish.publish(reward);
         place_publish.publish(place);
         seen_publish.publish(seen);
@@ -438,4 +483,3 @@ int main(int argc, char *argv[])
 
     return app.exec();
 }
-
