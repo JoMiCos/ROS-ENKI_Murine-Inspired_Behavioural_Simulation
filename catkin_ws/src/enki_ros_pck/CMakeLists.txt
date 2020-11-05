@@ -39,7 +39,7 @@ set(enki_LIBRARY /usr/local/lib/libenki.a)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt5 COMPONENTS OpenGL REQUIRED)
 
-set(SOURCES run.cpp Racer.cpp bandpass.cpp)
+set(SOURCES run.cpp Racer.cpp bandpass.cpp ReversalSignals.cpp)
 
 include_directories(/usr/local/include/enki)
 

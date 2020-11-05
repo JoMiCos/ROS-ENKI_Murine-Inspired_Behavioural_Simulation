@@ -54,7 +54,7 @@
 #include <iostream>
 #include "Racer.h"
 #include <stdlib.h>
-//#include "ReversalSignals.h"
+#include "ReversalSignals.h"
 
 #include "bandpass.h"
 #include "parameters.h"
@@ -79,55 +79,6 @@ int nInputs= ROW1N+ROW2N+ROW3N; //this cannot be an odd number for icoLearner
 //bool rewardBool;
 std_msgs::Bool reward;
 //reward.data = false;
-
-//move this to its own file and header
-//void rewardBool(float ratx, float raty, float pelx, float pely, std_msgs::Bool& reward) // (racer->pos, pellet->pos)
-//{
-   //ROS_INFO("%s", "Entered Function");
-  //  if (sqrt((ratx - pelx)*(ratx - pelx)+(raty - pely)*(raty - pely))<13.0)
-   // {	//robot half length + food radius = 10+2 = 12
-   //     reward.data = true; 
-        //ROS_INFO("%s", "Entered True");
-   // }
-   // else
-   // {
-        //ROS_INFO("%f", "pelx");
-   //     reward.data = false;
-   // }
-    
-//}
-
-void rewardBool(Enki::Racer* racer, Enki::PhysicalObject* pellet, std_msgs::Bool& reward, double maxx, double maxy) // (racer->pos, pellet->pos)
-{
-   // ROS_INFO("%f", racer->pos.x);
-   // ROS_INFO("%f", racer->pos.y);
-   // ROS_INFO("%f", pellet->pos.x);
-   // ROS_INFO("%f", pellet->pos.x);
-    //ROS_INFO("%f",sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x))+sqrt((racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y)));
-    if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<13.0)
-    {	//robot half length + food radius = 10+2 = 12
-        reward.data = true; 
-        racer->pos = Point(maxx/2, maxy/2 -30);
-    //    ROS_INFO("%s", "Entered True");
-    }
-    else
-    {
-        //ROS_INFO("%f", "pellet->pos.x");
-        reward.data = false;
-    }
-    
-}
-
-void getDistance(Enki::Racer* racer, Enki::PhysicalObject* pellet, enki_ros_pck::Sight sight)
-{
-    float xdistance = sqrt((racer->pos.x -  pellet->pos.x)*(racer->pos.x -  pellet->pos.x));
-    float ydistance = sqrt((racer->pos.y - pellet->pos.y) * (racer->pos.y- pellet->pos.y));
-    float direct_distance = sqrt((xdistance*xdistance)+(ydistance*ydistance)) -13; //13 = halflength of robot
-    ROS_INFO("%f",direct_distance);
-    sight.distance = direct_distance;
-
-}
-
 
 class EnkiPlayground : public EnkiWidget
 {
@@ -352,86 +303,26 @@ virtual void sceneCompletedHook()
         {
             placeBool = 0;
         }
-        //---------------------------------------------------------
+       
 
-        //reward seen.
-        static int vision[9]; //fix this later (if im right and it needs fixed)
-        bool seenBool = 0;
-        //sensor_msgs::Image fov;
-        //sensor_msgs::Image
-        //msg.data[324]; //field of view data 
-               
-        for (int i=0; i<7; i++)
-        {
-          vision[i] = msg.data[((80)+(i*16))]; //creates array of all R values from RGB vision-array (reward is pure red so == (255,0,0) uintRGB - R value every 4 but that makes it lag so 16
-        }
+        //---------------------------------REVERSAL DATA PUBLISHING------------------------------------------------
         
-       // why is the rat blind on the left side?
-
-        //if((vision[8] != vision[2]) ||(vision[7] != vision[3]) || (vision[6] != vision[4]))
-        if( vision[0]==255 || vision[1]==255 || vision[2]==255 || vision[3]==255 || vision[4]==255 || vision[5]==255 || vision[6]==255 || vision[7]==255 || vision[8]==255 || vision[9]==255 || vision[10]==255 || vision[11]==255 || vision[12]==255 || vision[13]==255 || vision[14]==255 || vision[15]==255 || vision[16]==255 || vision[17]==255 || vision[18]==255 || vision[19]==255 || vision[20]==255 || vision[21]==255 || vision[22]==255 || vision[23]==255 || vision[24]==255 || vision [25]==255 || vision[26]==255 || vision[27]==255)        
-        {
-           /* ROS_INFO("%s","____________");
-            ROS_INFO("%d",vision[0]);
-            ROS_INFO("%d",vision[1]);
-            ROS_INFO("%d",vision[2]);
-            ROS_INFO("%d",vision[3]);
-            ROS_INFO("%d",vision[4]);
-            ROS_INFO("%d",vision[5]);
-            ROS_INFO("%d",vision[6]);
-            ROS_INFO("%d",vision[7]);
-            ROS_INFO("%d",vision[8]);
-            ROS_INFO("%d",vision[9]);
-            ROS_INFO("%d",vision[10]);
-            ROS_INFO("%d",vision[11]);
-            ROS_INFO("%d",vision[12]);
-            ROS_INFO("%d",vision[13]);
-            ROS_INFO("%d",vision[14]);
-            ROS_INFO("%d",vision[15]);
-            ROS_INFO("%d",vision[16]);
-            ROS_INFO("%d",vision[17]);
-            ROS_INFO("%d",vision[18]);
-            ROS_INFO("%d",vision[19]);
-            ROS_INFO("%d",vision[20]);
-            ROS_INFO("%d",vision[21]);
-            ROS_INFO("%d",vision[22]);
-            ROS_INFO("%d",vision[23]);
-            ROS_INFO("%d",vision[24]);
-            ROS_INFO("%d",vision[25]);
-            ROS_INFO("%d",vision[26]);
-            ROS_INFO("%d",vision[27]); */
-
-    
-            seenBool = true;
-        }
-        
-        else
-        {
-            
-            seenBool = false;
-        }
-        //camera_pub_colour->data
-        //if((sensor_values[8]/255.0) - (sensor_values[2]/255.0) != 0||(sensor_values[7]/255.0) -(sensor_values[3]/255.0) != 0||(sensor_values[6]/255.0) - (sensor_values[4]/255.0) != 0){
-        
-
-        //Reversal publishing
         std_msgs::Bool reward; //bool message for if rat is at reward
-        std_msgs::Bool place;
-        //std_msgs::Bool seen; //make this a custom msg later, add distance
-        enki_ros_pck::Sight seen;
+        std_msgs::Bool place; // bool message is rat is in defined place
+        enki_ros_pck::Sight seen; //bool and distance message for if rat sees reward and how far it is from reward
 
-        //reward.data = rewardBool; //true if rat very close
-        rewardBool(racer, pellet, reward, maxx, maxy);
+        rewardBool(racer, pellet, reward, maxx, maxy); //call rewardBool function which checks if rat has received reward (located in ReversalSignals.h)
+        getDistance(racer, pellet, seen); //call function which checks distance from rat to reward, sets seen.distance. (located in ReversalSignals.h)
+        seenBool(seen, msg); // call function which checks is rat can see reward, sets seen.sight. (located in ReversalSignals.h)
         place.data = placeBool;
-        seen.sight = seenBool;
-        getDistance(racer, pellet, seen);
-        
-    /// Delete this second section - try not using custom msg and see if that fixes tilt...
 
-        reward_publish.publish(reward);
-        place_publish.publish(place);
-        seen_publish.publish(seen);
+        // Publish reversal data
+        reward_publish.publish(reward); //publishes data about if rat can see reward
+        place_publish.publish(place); //publishes data about if rat is in defined place
+        seen_publish.publish(seen); //publishes data about if rat can see reward and how far from reward it is.
         ros::spinOnce();
+
+        //----------------------------------------------------------------------------------------------------------
 
 #ifdef reflex
         if (countRuns==0){

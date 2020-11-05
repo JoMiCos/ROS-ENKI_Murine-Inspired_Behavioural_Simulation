@@ -4,6 +4,8 @@
 #include "ros/ros.h" 
 #include "std_msgs/Bool.h"
 #include <ros/package.h>
+#include "enki_ros_pck/Sight.h"
+#include "sensor_msgs/Image.h"
 
 #include <Enki.h>
 #include <fstream>
@@ -22,6 +24,8 @@
 
 void rewardBool(Enki::Racer* racer, Enki::PhysicalObject* pellet, std_msgs::Bool& reward, double maxx, double maxy);
 
-void getDistance(Enki::Racer* racer, Enki::PhysicalObject* pellet, enki_ros_pck::Sight sight);
+void getDistance(Enki::Racer* racer, Enki::PhysicalObject* pellet, enki_ros_pck::Sight& sight);
+
+void seenBool(enki_ros_pck::Sight& seen, sensor_msgs::Image msg);
 
 #endif
