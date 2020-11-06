@@ -76,9 +76,7 @@ int learningRateCount =0;
 int firstStep =1; //so that it does propInputs once and then back/forth in that order
 
 int nInputs= ROW1N+ROW2N+ROW3N; //this cannot be an odd number for icoLearner
-//bool rewardBool;
-std_msgs::Bool reward;
-//reward.data = false;
+
 
 class EnkiPlayground : public EnkiWidget
 {
@@ -265,21 +263,7 @@ virtual void sceneCompletedHook()
 	    msg.data.resize(9*4*9);
    	    camera_pub_colour.publish(msg);
 
-        //------------Move everything inside to headers-----------
-        //set robot back if it gets very close to food
-	    //if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<13.0)
-        //{	//robot half length + food radius = 10+2 = 12
-		    //racer->pos = Point(maxx/2, maxy/2 -30); //return racer to start point
-            //rewardBool = true;  
-        //}
-
-        //else
-        //{
-            //rewardBool = false;
-        //}
-        
-        //-------------------------------------------------------------
-    
+            
         // return pellet to start point in case of collision (shouldnt happen but sometimes does)
         if ( pellet->speed.x != 0)
         {
@@ -287,36 +271,20 @@ virtual void sceneCompletedHook()
             pellet->speed.y=0;
             pellet->pos = Point((maxx*9/50),(maxy*4/5 -20));
         }
-        //-------------------------------------------------------------
-
-        //Write bool true if within set circle. (make this a function when you work out how to pass racer->pos into a function...)
-        double circleOnex = maxx*9/50;
-        double circleOney = (maxy*4/5 -20);
-        double circleOneRad = 20;
-        bool placeBool = 0;
-
-        if (((racer->pos.x >= (circleOnex - circleOneRad)) && (racer->pos.x <= (circleOnex + circleOnex))) && ((racer->pos.y <= (circleOney + circleOneRad)) && (racer->pos.y >= (circleOney - circleOneRad))))
-        {
-            placeBool = 1;
-        }
-        else
-        {
-            placeBool = 0;
-        }
-       
-
-        //---------------------------------REVERSAL DATA PUBLISHING------------------------------------------------
         
+        //---------------------------------REVERSAL DATA PUBLISHING------------------------------------------------
+        //name ros msgs
         std_msgs::Bool reward; //bool message for if rat is at reward
         std_msgs::Bool place; // bool message is rat is in defined place
         enki_ros_pck::Sight seen; //bool and distance message for if rat sees reward and how far it is from reward
 
-        rewardBool(racer, pellet, reward, maxx, maxy); //call rewardBool function which checks if rat has received reward (located in ReversalSignals.h)
-        getDistance(racer, pellet, seen); //call function which checks distance from rat to reward, sets seen.distance. (located in ReversalSignals.h)
-        seenBool(seen, msg); // call function which checks is rat can see reward, sets seen.sight. (located in ReversalSignals.h)
-        place.data = placeBool;
+        //assign values to msgs
+        rewardBool(racer, pellet, reward, maxx, maxy); // calls rewardBool function which checks if rat has received reward (located in ReversalSignals.h)
+        getDistance(racer, pellet, seen); //calls function which checks distance from rat to reward, sets seen.distance. (located in ReversalSignals.h)
+        seenBool(seen, msg); // calls function which checks is rat can see reward, sets seen.sight. (located in ReversalSignals.h)
+        placeBool(place, racer, maxx*9/50, (maxy*4/5 -20), 20, maxx, maxy); // (msg, enki-racer, x coord of centre of place, y coord of centre of place, radius of place, max x coord of simulator, max y cord of simulator) call function which checks if rat is in defined place, sets reward.data. (located in ReversalSignals.h)
 
-        // Publish reversal data
+        //Publish msgs
         reward_publish.publish(reward); //publishes data about if rat can see reward
         place_publish.publish(place); //publishes data about if rat is in defined place
         seen_publish.publish(seen); //publishes data about if rat can see reward and how far from reward it is.

@@ -28,4 +28,7 @@ void getDistance(Enki::Racer* racer, Enki::PhysicalObject* pellet, enki_ros_pck:
 
 void seenBool(enki_ros_pck::Sight& seen, sensor_msgs::Image msg);
 
+void placeBool(std_msgs::Bool& placeBool, Enki::Racer* racer, double circleCentreX, double circleCentreY, double circleRad ,double maxX, double maxY);
+
+
 #endif

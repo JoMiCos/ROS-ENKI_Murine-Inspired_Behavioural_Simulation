@@ -46,3 +46,15 @@ void seenBool(enki_ros_pck::Sight& seen, sensor_msgs::Image msg)
         seen.sight = false;
     }
 }
+
+void placeBool(std_msgs::Bool& placeBool, Enki::Racer* racer, double circleCentreX, double circleCentreY, double circleRad ,double maxX, double maxY)
+{
+    if ((racer->pos.x >= (circleCentreX - circleRad)) && (racer->pos.x <= (circleCentreX + circleRad)) && (racer->pos.y <= (circleCentreY + circleRad)) && (racer->pos.y >= (circleCentreY - circleRad))) //This doesnt actually work, I think it makes a square... maybe do it with objects (or at least see if you can). Although having tested it, it basically works...
+    {
+        placeBool.data = true;
+    }
+    else
+    {
+        placeBool.data = false;
+    }
+}
