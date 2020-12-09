@@ -226,18 +226,18 @@ namespace Enki
 	
 	// PhysicalObject
 	
-	const double PhysicalObject::g = 9.81;
+	double PhysicalObject::g = 9.81;
 	
 	PhysicalObject::PhysicalObject(void) :
 		userData(NULL),
 		// default physical parameters
-		collisionElasticity(0.9),
-		dryFrictionCoefficient(0.25),
-		viscousFrictionCoefficient(0.01),
-		viscousMomentFrictionCoefficient(0.01),
-		angle(0),
-		angSpeed(0),
-		interlacedDistance(0),
+		collisionElasticity(0.9),//0.9
+		dryFrictionCoefficient(0.25),//0.25
+		viscousFrictionCoefficient(0.01),//0.01
+		viscousMomentFrictionCoefficient(0.01),//0.01
+		angle(0),//0
+		angSpeed(0),//0
+		interlacedDistance(0),//0
 		uid(uidNewObject++)
 	{
 		setCylindric(1, 1, 1);
@@ -251,6 +251,7 @@ namespace Enki
 		}
 	}
 	
+
 	void PhysicalObject::dirtyUserData()
 	{
 		if (userData)

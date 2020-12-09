@@ -291,6 +291,7 @@ namespace Enki
 		//! Destructor
 		virtual ~PhysicalObject();
 		
+
 		// getters
 		
 		inline double getRadius() const { return r; }
