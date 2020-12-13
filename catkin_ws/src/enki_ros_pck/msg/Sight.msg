@@ -1,2 +1,2 @@
-bool sight
+float32 sight
 float32 distance

@@ -1,5 +1,5 @@
 //instead of passing reversal-5ht variables to this file, create appropriate subscribers in those files?... (can maybe still run in main here?)
-
+//Next, make sure all subsribed values are coming out (ros_info) and plug into doStep
 
 #include "rat_move.h"
 #include <unistd.h>
@@ -7,6 +7,14 @@
 #include "ros/ros.h"
 #include "sensor_msgs/Image.h"
 #include "geometry_msgs/Twist.h"
+#include "robot.h"
+#include "world.h"
+#include "std_msgs/Float32.h"
+//#include "callback.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+//#include "rat_move_pkg/Sight.h"
+#include "enki_ros_pck/Sight.h"
 
 //#include <reversal-5ht/limbic-system-model/filter.h>
 #include "Brain/limbic-system-model.h"
@@ -16,6 +24,46 @@ static int sensor_values_stuck;
 static int count; 
 static bool flag = false;
 //CtxNeuron* OFCNeuron;
+/*
+void rewardCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+	bool reward = msg->data;
+}
+*/
+
+
+void rewardCallback(const std_msgs::Float32::ConstPtr& msg)
+{
+	float reward = msg->data;
+}
+
+void bluePlaceCallback(const std_msgs::Float32::ConstPtr& msg)
+{
+	float blue_placefield = msg->data;
+}
+
+void greenPlaceCallback(const std_msgs::Float32::ConstPtr& msg)
+{
+	float green_placefield = msg->data;
+}
+
+void seeBlueLandmarkCallback(const enki_ros_pck::Sight::ConstPtr& msg)
+{
+	float blue_sight = msg->sight;
+	float blue_distance = msg->distance; 
+}
+
+void seeGreenLandmarkCallback(const enki_ros_pck::Sight::ConstPtr& msg)
+{
+	float green_sight = msg->sight;
+	float green_distance = msg->distance; 
+}
+
+void rewardDistanceCallback(const enki_ros_pck::Sight::ConstPtr& msg)
+{
+	float rewardDistance = msg->distance;
+	float reward_seen = msg->sight;
+}
 
 
 void callback(const sensor_msgs::Image::ConstPtr& msg, int index){
@@ -122,6 +170,11 @@ msg.angular.z = 1(exploreRight-exploreLeft)
 //		OFC = 0.25;
 //	}
 
+//limbic_system=new Limbic_system();
+//Greendirection=new Direction();
+//Bluedirection=new Direction();
+
+//limbic_system->doStep()
 
 void calculateMotorSpeeds(geometry_msgs::Twist& msg){
 	
@@ -143,6 +196,7 @@ int main(int argc, char **argv){
 	ros::NodeHandle nh;
 	ros::Subscriber eyes[9];
 	ros::Subscriber stuck;
+	ros::Subscriber limbic_signals[9];
 	
 	eyes[0] = nh.subscribe("mybot/colour_camera/image_raw", 1, callback0);
 	eyes[1] = nh.subscribe("mybot/colour_camera/image_raw", 1, callback1);
@@ -154,6 +208,17 @@ int main(int argc, char **argv){
 	eyes[7] = nh.subscribe("mybot/colour_camera/image_raw", 1, callback7);
 	eyes[8] = nh.subscribe("mybot/colour_camera/image_raw", 1, callback8);
 	stuck = nh.subscribe("mybot/colour_camera/image_raw", 1, callbackstuck);
+
+	limbic_signals[0] = nh.subscribe("mybot/isRewarded", 1, rewardCallback);
+	limbic_signals[1] = nh.subscribe("mybot/seeBlue", 1, seeBlueLandmarkCallback);
+	limbic_signals[2] = nh.subscribe("mybot/seeGreen",1, seeGreenLandmarkCallback);
+	limbic_signals[3] = nh.subscribe("mybot/seeReward", 1, rewardDistanceCallback);
+	limbic_signals[4] = nh.subscribe("mybot/inPlaceBlue",1, bluePlaceCallback);
+	limbic_signals[5] = nh.subscribe("mybot/inPlaceGreen", 1, greenPlaceCallback);
+	//limbic_signals[6] = nh.subscribe("mybot/on_contact_blue", 1 , on);
+	//limbic_signals[7];
+	
+	//limbic_signals[6] = nh.subscribe("mybot/",1,);
 
 	ros::Publisher vel_pub = nh.advertise<geometry_msgs::Twist>("mybot/cmd_vel", 1);
 

@@ -10,7 +10,7 @@ int REWARD_DELAY = 10;
 
 Robot::Robot(World* ww,
 	     int index,
-	     float angle,
+	     float angl
 	     float xPos,
 	     float yPos,
 	     float w,

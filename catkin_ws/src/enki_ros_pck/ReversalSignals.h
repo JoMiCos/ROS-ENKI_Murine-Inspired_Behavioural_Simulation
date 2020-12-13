@@ -3,6 +3,7 @@
 
 #include "ros/ros.h" 
 #include "std_msgs/Bool.h"
+#include "std_msgs/Float32.h"
 #include <ros/package.h>
 #include "enki_ros_pck/Sight.h"
 #include "sensor_msgs/Image.h"
@@ -46,8 +47,8 @@ void setPelletColour(Enki::PhysicalObject* pellet, int pellet_colour);
 void seenBool(enki_ros_pck::Sight& seen, sensor_msgs::Image msg, int pellet_colour);
 
 
-//void rewardBool(Enki::Racer* racer, _Pellet _pellet, Enki::PhysicalObject* pellet, std_msgs::Bool& reward, double maxx, double maxy);
-void rewardBool(Enki::Racer* racer, Enki::PhysicalObject* pellet, std_msgs::Bool& reward, double maxx, double maxy, bool rewardDelay);
+//void rewardBool(Enki::Racer* racer, _Pellet _pellet, Enki::PhysicalObject* pellet, std_msgs::Float32& reward, double maxx, double maxy);
+//void rewardBool(Enki::Racer* racer, Enki::PhysicalObject* pellet, std_msgs::Float32& reward, double maxx, double maxy, bool rewardDelay);
 
 
 //void getDistance(Enki::Racer* racer, _Pellet _pellet, Enki::PhysicalObject* pellet, enki_ros_pck::Sight& sight);
@@ -55,9 +56,9 @@ void getDistanceGreen(Enki::Racer* racer, Enki::PhysicalObject* pellet, enki_ros
 
 void getDistanceBlue(Enki::Racer* racer, Enki::PhysicalObject* pellet, enki_ros_pck::Sight& sight, float maxx, float maxy);
 
-void placeBoolGreen(std_msgs::Bool& placeBool, Enki::Racer* racer, double circleCentreX, double circleCentreY, double circleRad ,double maxX, double maxY);
+void placeBoolGreen(std_msgs::Float32& placeBool, Enki::Racer* racer, double circleCentreX, double circleCentreY, double circleRad ,double maxX, double maxY);
 
-void placeBoolBlue(std_msgs::Bool& placeBool, Enki::Racer* racer, double circleCentreX, double circleCentreY, double circleRad ,double maxX, double maxY);
+void placeBoolBlue(std_msgs::Float32& placeBool, Enki::Racer* racer, double circleCentreX, double circleCentreY, double circleRad ,double maxX, double maxY);
 
 void on_contact_direction_blue();
 

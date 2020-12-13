@@ -45,12 +45,12 @@ void seenBool(enki_ros_pck::Sight& seen, sensor_msgs::Image msg, int pellet_colo
             
         if( vision[0]==255 || vision[1]==255 || vision[2]==255 || vision[3]==255 || vision[4]==255 || vision[5]==255 || vision[6]==255 || vision[7]==255 || vision[8]==255 || vision[9]==255 || vision[10]==255 || vision[11]==255 || vision[12]==255 || vision[13]==255 || vision[14]==255 || vision[15]==255 || vision[16]==255 || vision[17]==255 || vision[18]==255 || vision[19]==255 || vision[20]==255 || vision[21]==255 || vision[22]==255 || vision[23]==255 || vision[24]==255 || vision [25]==255 || vision[26]==255 || vision[27]==255)        
         {
-            seen.sight = true;
+            seen.sight = 1.0;
         }
         
         else
         {
-            seen.sight = false;
+            seen.sight = 0.0;
         }
         break;
     
@@ -62,12 +62,12 @@ void seenBool(enki_ros_pck::Sight& seen, sensor_msgs::Image msg, int pellet_colo
             
         if( vision[0]==255 || vision[1]==255 || vision[2]==255 || vision[3]==255 || vision[4]==255 || vision[5]==255 || vision[6]==255 || vision[7]==255 || vision[8]==255 || vision[9]==255 || vision[10]==255 || vision[11]==255 || vision[12]==255 || vision[13]==255 || vision[14]==255 || vision[15]==255 || vision[16]==255 || vision[17]==255 || vision[18]==255 || vision[19]==255 || vision[20]==255 || vision[21]==255 || vision[22]==255 || vision[23]==255 || vision[24]==255 || vision [25]==255 || vision[26]==255 || vision[27]==255)        
         {
-            seen.sight = true;
+            seen.sight = 1.0;
         }
         
         else
         {
-            seen.sight = false;
+            seen.sight = 0.0;
         }
         break;
 
@@ -79,12 +79,12 @@ void seenBool(enki_ros_pck::Sight& seen, sensor_msgs::Image msg, int pellet_colo
             
         if( vision[0]==255 || vision[1]==255 || vision[2]==255 || vision[3]==255 || vision[4]==255 || vision[5]==255 || vision[6]==255 || vision[7]==255 || vision[8]==255 || vision[9]==255 || vision[10]==255 || vision[11]==255 || vision[12]==255 || vision[13]==255 || vision[14]==255 || vision[15]==255 || vision[16]==255 || vision[17]==255 || vision[18]==255 || vision[19]==255 || vision[20]==255 || vision[21]==255 || vision[22]==255 || vision[23]==255 || vision[24]==255 || vision [25]==255 || vision[26]==255 || vision[27]==255)        
         {
-            seen.sight = true;
+            seen.sight = 1.0;
         }
         
         else
         {
-            seen.sight = false;
+            seen.sight = 0.0;
         }
         break;
     default:
@@ -93,6 +93,7 @@ void seenBool(enki_ros_pck::Sight& seen, sensor_msgs::Image msg, int pellet_colo
         break;
     }
 }
+
 
 
 //void rewardBool(Enki::Racer* racer, _Pellet _pellet, std_msgs::Bool& reward, double maxx, double maxy) // (racer->pos, pellet->pos)
@@ -142,27 +143,27 @@ void getDistanceBlue(Enki::Racer* racer, Enki::PhysicalObject* pellet, enki_ros_
     sight.distance = normalised_distance;
 }
 
-void placeBoolGreen(std_msgs::Bool& placeBool, Enki::Racer* racer, double circleCentreX, double circleCentreY, double circleRad ,double maxX, double maxY)
+void placeBoolGreen(std_msgs::Float32& placeBool, Enki::Racer* racer, double circleCentreX, double circleCentreY, double circleRad ,double maxX, double maxY)
 {
     if ((racer->pos.x >= (circleCentreX - circleRad)) && (racer->pos.x <= (circleCentreX + circleRad)) && (racer->pos.y <= (circleCentreY + circleRad)) && (racer->pos.y >= (circleCentreY - circleRad))) //This doesnt actually work, I think it makes a square... maybe do it with objects (or at least see if you can). Although having tested it, it basically works (Longterm, add colour camera looking beneath)
     {
-        placeBool.data = true;
+        placeBool.data = 1.0;
     }
     else
     {
-        placeBool.data = false;
+        placeBool.data = 0.0;
     }
 }
 
-void placeBoolBlue(std_msgs::Bool& placeBool, Enki::Racer* racer, double circleCentreX, double circleCentreY, double circleRad ,double maxX, double maxY)
+void placeBoolBlue(std_msgs::Float32& placeBool, Enki::Racer* racer, double circleCentreX, double circleCentreY, double circleRad ,double maxX, double maxY)
 {
     if ((racer->pos.x >= (circleCentreX - circleRad)) && (racer->pos.x <= (circleCentreX + circleRad)) && (racer->pos.y <= (circleCentreY + circleRad)) && (racer->pos.y >= (circleCentreY - circleRad))) //This doesnt actually work, I think it makes a square... maybe do it with objects (or at least see if you can). Although having tested it, it basically works...
     {
-        placeBool.data = true;
+        placeBool.data = 1.0;
     }
     else
     {
-        placeBool.data = false;
+        placeBool.data = 0.0;
     }
 }
 

@@ -1,20 +1,31 @@
 #include "callback.h"
 
-void rewardCallback(const std_msgs::Bool::ConstPtr& msg)
+void rewardCallback(const std_msgs::Float32::ConstPtr& msg)
 {
-	bool reward = msg->data;
+	float reward = msg->data;
 }
 
-void placeCallback(const std_msgs::Bool::ConstPtr& msg, int index)
+void bluePlaceCallback(const std_msgs::Float32::ConstPtr& msg)
 {
-	bool placefield = msg->data;
+	float blue_placefield = msg->data;
 }
 
-void seeLandmark(const enki_ros_pck::Sight::ConstPtr& msg, int index)
+void greenPlaceCallback(const std_msgs::Float32::ConstPtr& msg)
 {
-	bool sight = msg->sight;
-	float distance = msg->distance; 
+	float green_placefield = msg->data;
 }
 
-void 
+void seeBlueLandmarkCallback(const enki_ros_pck::Sight::ConstPtr& msg)
+{
+	bool blue_sight = msg->sight;
+	float blue_distance = msg->distance; 
+}
+
+void seeGreenLandmarkCallback(const enki_ros_pck::Sight::ConstPtr& msg)
+{
+	bool green_sight = msg->sight;
+	float green_distance = msg->distance; 
+}
+
+//void 
 

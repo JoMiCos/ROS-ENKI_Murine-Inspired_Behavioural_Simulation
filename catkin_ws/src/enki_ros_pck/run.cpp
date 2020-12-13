@@ -38,6 +38,7 @@
 #include "sensor_msgs/Image.h"
 #include "geometry_msgs/Twist.h"
 #include "std_msgs/Bool.h"
+#include "std_msgs/Float32.h"
 #include <ros/package.h>
 #include "enki_ros_pck/Sight.h"
 
@@ -106,7 +107,7 @@ void rewardDelay(seconds Delay){
 }
 
 
-void rewardBool(Enki::Racer* racer, Enki::PhysicalObject* pellet, std_msgs::Bool& reward, double racerx, double racery, double circleCentreX, double circleCentreY, double circleRad) // (racer->pos, pellet->pos)
+void rewardBool(Enki::Racer* racer, Enki::PhysicalObject* pellet, std_msgs::Float32& reward, double racerx, double racery, double circleCentreX, double circleCentreY, double circleRad) // (racer->pos, pellet->pos)
 {
     if ((racer->pos.x >= (circleCentreX - circleRad)) && (racer->pos.x <= (circleCentreX + circleRad)) && (racer->pos.y <= (circleCentreY + circleRad)) && (racer->pos.y >= (circleCentreY - circleRad))){
     rewardDelay(delay);
@@ -133,30 +134,30 @@ void rewardBool(Enki::Racer* racer, Enki::PhysicalObject* pellet, std_msgs::Bool
     }
 }
 
-void on_contact_direction_blue(Enki::Racer* racer, Enki::PhysicalObject* pellet)
+void on_contact_direction_blue(Enki::Racer* racer, Enki::PhysicalObject* pellet, std_msgs::Float32 contactBlue)
 {
     if (reward_flag==0){
         if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<13.0)
         {	//robot half length + food radius = 10+2 = 12
-            contactBlue = 1;
+            contactBlue.data = 1;
         }
         else
         {
-            contactBlue = 0;
+            contactBlue.data = 0;
         }
     }
 }
 
-void on_contact_direction_green(Enki::Racer* racer, Enki::PhysicalObject* pellet)
+void on_contact_direction_green(Enki::Racer* racer, Enki::PhysicalObject* pellet, std_msgs::Float32 contactGreen)
 {
     if (reward_flag==0){
         if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<13.0)
         {	//robot half length + food radius = 10+2 = 12
-            contactGreen = 1;
+            contactGreen.data = 1;
         }
         else
         {
-            contactGreen = 0;
+            contactGreen.data = 0;
         }
     }
 }
@@ -254,14 +255,20 @@ protected:
     ros::Publisher camera_pub_colour;
     //publisher to is_Rewarded (if rat gets reward)
     ros::Publisher reward_publish;
-    //publisher to in_Place (if rat in assigned place)
-    ros::Publisher place_publish;
+    //publisher to in_Blue_Place (if rat in assigned place)
+    ros::Publisher placeB_publish;
+    //publisher to in_Green_Place (if rat in assigned place)
+    ros::Publisher placeG_publish;
     //publisher for is_Seen (if rat sees Green pellet)
     ros::Publisher seenG_publish;
     //publisher for is_Seen (if rat sees Blue pellet)
     ros::Publisher seenB_publish;
-    //subscriber for the motor control messages
-     ros::Publisher seenR_publish;
+   
+    ros::Publisher seenR_publish;
+    //publisher for contactBLue
+    ros::Publisher on_contact_blue_publish;
+
+    ros::Publisher on_contact_green_publish;
     //subscriber for the motor control messages
     ros::Subscriber sub;
 
@@ -292,12 +299,14 @@ public:
         camera_pub_colour = nh.advertise<sensor_msgs::Image>("mybot/colour_camera/image_raw", 1);
 
         //Reversal publishers
-        reward_publish = nh.advertise<std_msgs::Bool>("mybot/isRewarded",1);
-        place_publish = nh.advertise<std_msgs::Bool>("mybot/inPlace",1);
-        seenG_publish = nh.advertise<enki_ros_pck::Sight>("mybot/SeeGreen",1);
-        seenB_publish = nh.advertise<enki_ros_pck::Sight>("mybot/SeeBlue",1);
-        seenR_publish = nh.advertise<enki_ros_pck::Sight>("mybot/SeeReward",1);
-        
+        reward_publish = nh.advertise<std_msgs::Float32>("mybot/isRewarded",1);
+        placeG_publish = nh.advertise<std_msgs::Float32>("mybot/inPlaceGreen",1);
+        placeB_publish = nh.advertise<std_msgs::Float32>("mybot/inPlaceBlue",1);
+        seenG_publish = nh.advertise<enki_ros_pck::Sight>("mybot/seeGreen",1);
+        seenB_publish = nh.advertise<enki_ros_pck::Sight>("mybot/seeBlue",1);
+        seenR_publish = nh.advertise<enki_ros_pck::Sight>("mybot/seeReward",1);
+        on_contact_blue_publish = nh.advertise<std_msgs::Float32>("mybot/contactBlue", 1);
+        on_contact_green_publish = nh.advertise<std_msgs::Float32>("mybot/contactGreen", 1);      
 
         racer = new Racer(nInputs);
         racer->pos = Point(racerx, racery); // x and y of the start point
@@ -434,8 +443,11 @@ virtual void sceneCompletedHook()
         
         //---------------------------------REVERSAL DATA PUBLISHING------------------------------------------------
         //name ros msgs
-        std_msgs::Bool reward; //bool message for if rat is at reward
-        std_msgs::Bool place; // bool message is rat is in defined place
+        std_msgs::Float32 reward; //bool message for if rat is at reward
+        std_msgs::Float32 placeG; // bool message is rat is in defined place
+        std_msgs::Float32 placeB;
+        std_msgs::Float32 on_contact_blue; //float message for if rat is touching blue landmark (0 or 1)
+        std_msgs::Float32 on_contact_green; //float message for if rat is touching green landmark (0 or 1)
         enki_ros_pck::Sight seenG; //bool and distance message for if rat sees green pellet and how far it is from green pellet
         enki_ros_pck::Sight seenB; //bool and distance message for if rat sees blue pellet and how far it is from blue pellet
         enki_ros_pck::Sight seenR; //bool and distance message for if rat sees reward and how far it is from reward
@@ -447,20 +459,25 @@ virtual void sceneCompletedHook()
         getDistanceGreen(racer, pelletL, seenG, maxx, maxy); //calls function which checks distance from rat to reward, sets seen.distance. (located in ReversalSignals.h)
         getDistanceBlue(racer, pelletR, seenB, maxx, maxy);
         getDistanceReward(racer, pelletR, seenR, rewardPelletx, rewardPellety, 20);
-        on_contact_direction_blue(racer, pelletR);
-        on_contact_direction_green(racer, pelletL);
+        on_contact_direction_blue(racer, pelletR, on_contact_blue);
+        on_contact_direction_green(racer, pelletL, on_contact_green);
 
 
         seenBool(seenG, msg, GREEN); // calls function which checks is rat can see reward, sets seen.sight. (located in ReversalSignals.h)
-                
-        placeBoolGreen(place, racer, GREENPELLETX, GREENPELLETY, 20, maxx, maxy); // (msg, enki-racer, x coord of centre of place, y coord of centre of place, radius of place, max x coord of simulator, max y cord of simulator) call function which checks if rat is in defined place, sets reward.data. (located in ReversalSignals.h)
-        placeBoolBlue(place, racer, BLUEPELLETX, BLUEPELLETY, 20, maxx, maxy);
+        seenBool(seenB, msg, BLUE);
+
+        placeBoolGreen(placeG, racer, GREENPELLETX, GREENPELLETY, 20, maxx, maxy); // (msg, enki-racer, x coord of centre of place, y coord of centre of place, radius of place, max x coord of simulator, max y cord of simulator) call function which checks if rat is in defined place, sets reward.data. (located in ReversalSignals.h)
+        placeBoolBlue(placeB, racer, BLUEPELLETX, BLUEPELLETY, 20, maxx, maxy);
         //Publish msgs
         reward_publish.publish(reward); //publishes data about if rat can see reward
-        place_publish.publish(place); //publishes data about if rat is in defined place
+        placeG_publish.publish(placeG); //publishes data about if rat is in defined place
+        placeB_publish.publish(placeB); //publishes data about if rat is in defined place
         seenG_publish.publish(seenG); //publishes data about if rat can see reward and how far from reward it is.
         seenB_publish.publish(seenB);
         seenR_publish.publish(seenR);
+        on_contact_blue_publish.publish(on_contact_blue);
+        on_contact_green_publish.publish(on_contact_green);
+
         ros::spinOnce();
 
         //----------------------------------------------------------------------------------------------------------
