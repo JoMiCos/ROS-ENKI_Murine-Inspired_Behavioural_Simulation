@@ -1,19 +1,20 @@
 <launch>
 	<node
-	pkg="enki_test_pkg"
-	name="my_enki_test"
-	type="my_enki_test"
+	pkg="rat_move_pkg"
+	name="rat_move"
+	type="rat_move"
 	output="screen" />
 	
-<node
+	<node
 	 name="robot"
 	 pkg="enki_ros_pck"
-	 type="robot" 
+	 type="robot"
 	 output="screen" />
-	 
 
 	<node
 	 name="rqt_gui"
 	 pkg="rqt_gui"
-	 type="rqt_gui"/>
+	 type="rqt_gui"
+	 output="screen" />
+	
 </launch>
