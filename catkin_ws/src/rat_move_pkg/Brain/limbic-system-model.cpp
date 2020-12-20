@@ -84,7 +84,7 @@ void Limbic_system::weightChange(float &w, float delta) {
 //   the landmarks
 // - mPFC2CoreExploreLeft and - mPFC2CoreExploreRight to generate exploration behaviour
 //   that is inhibited with other activities.
-void Limbic_system::doStep(bool _reward,
+void Limbic_system::doStep(float _reward,
 		float _placefieldGreen,
 		float _placefieldBlue,
 		float _on_contact_direction_Green,

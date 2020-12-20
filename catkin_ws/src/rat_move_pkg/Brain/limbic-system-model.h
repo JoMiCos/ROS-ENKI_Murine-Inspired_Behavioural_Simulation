@@ -27,16 +27,7 @@ public:
 	// Blue objects. There is a reflex input on contact
 	// and a distance signal from the "eyes" of the agent seeing the
 	// light or dark green object.
-	void doStep(float _reward,
-		    float _placefield_Green,
-		    float _placefield_Blue,
-		    float _on_contact_direction_Green,
-		    float _on_contact_direction_Blue,
-		    float _visual_direction_Green,
-		    float _visual_direction_Blue,
-		    float _visual_reward_Green,
-		    float _visual_reward_Blue
-		);
+	void doStep(float _reward, float _placefield_Green, float _placefield_Blue, float _on_contact_direction_Green, float _on_contact_direction_Blue, float _visual_direction_Green, float _visual_direction_Blue, float _visual_reward_Green, float _visual_reward_Blue);
 	
 	enum ExploreStates {EXPLORE_STRAIGHT, EXPLORE_LEFT, EXPLORE_RIGHT, EXPLORE_STOP, EXPLORE_NUM_ITEMS};
 

@@ -84,7 +84,7 @@ void Limbic_system::weightChange(float &w, float delta) {
 //   the landmarks
 // - mPFC2CoreExploreLeft and - mPFC2CoreExploreRight to generate exploration behaviour
 //   that is inhibited with other activities.
-void Limbic_system::doStep(bool _reward,
+void Limbic_system::doStep(float _reward,
 		float _placefieldGreen,
 		float _placefieldBlue,
 		float _on_contact_direction_Green,
@@ -137,6 +137,9 @@ void Limbic_system::doStep(bool _reward,
 
 	// this is also generated in the mPFC and then fed down to the NAcc core with the command
 	// to explore
+	//edit these so that they act on rat reversal, options:
+	// write publisher straight into here.. dont think it works without a main(), maybe it does if its called in a file with main
+	//have this write
 	switch (exploreState) {
 	case EXPLORE_LEFT:
 		mPFC2CoreExploreLeft = 0.1;
@@ -277,7 +280,7 @@ void Limbic_system::logging() {
 		OFCNeuron->getWeight(0), // 30
 		OFCNeuron->getWeight(1), // 31
 		mPFCneuronGreen->getWeight(0), // 32
-		mPFCneuronBlue->getWeight(0) // 33
+		mPFCneuronBlue->gWeight(0) // 33
 		);
 	fflush(flog);
 }

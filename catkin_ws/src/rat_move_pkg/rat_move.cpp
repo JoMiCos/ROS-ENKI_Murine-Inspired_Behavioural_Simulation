@@ -19,18 +19,26 @@
 //#include <reversal-5ht/limbic-system-model/filter.h>
 #include "Brain/limbic-system-model.h"
 #include "Brain/robot.h"
-static int sensor_values[9];
+static int blue_sensor_values[9];
+static int green_sensor_values[9];
+
 static int sensor_values_stuck;
 static int count; 
 static bool flag = false;
-//CtxNeuron* OFCNeuron;
-/*
-void rewardCallback(const std_msgs::Bool::ConstPtr& msg)
-{
-	bool reward = msg->data;
-}
-*/
 
+static float reward;
+static float blue_placefield;
+static float green_placefield;
+static float blue_sight;
+static float blue_distance;
+static float green_sight;
+static float green_distance;
+static float reward_distance;
+static float reward_seen;
+static float on_contact_blue;
+static float on_contact_green;
+
+Limbic_system limbic_system;
 
 void rewardCallback(const std_msgs::Float32::ConstPtr& msg)
 {
@@ -61,13 +69,22 @@ void seeGreenLandmarkCallback(const enki_ros_pck::Sight::ConstPtr& msg)
 
 void rewardDistanceCallback(const enki_ros_pck::Sight::ConstPtr& msg)
 {
-	float rewardDistance = msg->distance;
+	float reward_distance = msg->distance;
 	float reward_seen = msg->sight;
 }
 
+void onContactBlue(const std_msgs::Float32::ConstPtr& msg)
+{
+	float on_contact_blue = msg->data;
+}
 
-void callback(const sensor_msgs::Image::ConstPtr& msg, int index){
-	sensor_values[index] = msg->data[(81*1)+index*9+7];//changed 7 to 5
+void onContactGreen(const std_msgs::Float32::ConstPtr& msg)
+{
+	float on_contact_green = msg->data;
+}
+
+void greenCallback(const sensor_msgs::Image::ConstPtr& msg, int index){
+	green_sensor_values[index] = msg->data[(81*1)+index*9+6];
 	//ROS_INFO("%s", "-----------");
 	//ROS_INFO("%d", index);
 	//ROS_INFO("%d", sensor_values[index]);
@@ -80,15 +97,73 @@ void callback(const sensor_msgs::Image::ConstPtr& msg, int index){
 		flag = true;
 	}
 }
-void callback0(const sensor_msgs::Image::ConstPtr& msg){callback(msg, 0);}
-void callback1(const sensor_msgs::Image::ConstPtr& msg){callback(msg, 1);}
-void callback2(const sensor_msgs::Image::ConstPtr& msg){callback(msg, 2);}
-void callback3(const sensor_msgs::Image::ConstPtr& msg){callback(msg, 3);}
-void callback4(const sensor_msgs::Image::ConstPtr& msg){callback(msg, 4);}
-void callback5(const sensor_msgs::Image::ConstPtr& msg){callback(msg, 5);}
-void callback6(const sensor_msgs::Image::ConstPtr& msg){callback(msg, 6);}
-void callback7(const sensor_msgs::Image::ConstPtr& msg){callback(msg, 7);}
-void callback8(const sensor_msgs::Image::ConstPtr& msg){callback(msg, 8);}
+
+void blueCallback(const sensor_msgs::Image::ConstPtr& msg, int index){
+	blue_sensor_values[index] = msg->data[(81*1)+index*9+7];
+	//ROS_INFO("%s", "-----------");
+	//ROS_INFO("%d", index);
+	//ROS_INFO("%d", sensor_values[index]);
+		//81*1 shift to red data (from rgba)
+		//index*9 to get desired row
+		//+5 to get to the middle of the row
+	count++;
+	if(count==9){
+		count=0;
+		flag = true;
+	}
+}
+
+int colourCheck()//const sensor_msgs::Image::ConstPtr& msg)
+{	
+	int colour_check;
+	int green_sum{};
+	int blue_sum{};
+	for (int i=0;i<9;i++)
+	{
+		green_sum = green_sum+green_sensor_values[i]; 
+	}
+	for (int i=0;i<9;i++)
+	{
+		blue_sum = blue_sum+blue_sensor_values[i]; 
+	}
+
+	if (green_sum/9 > 225) //225 -> 8/9*255 to allow for errors
+	{
+		colour_check = 1;
+		return colour_check;
+	}
+	else if (blue_sum/9 >225)
+	{
+		colour_check = 2;
+		return colour_check;
+	}
+	else 
+	{
+		colour_check = 0;
+		return colour_check;
+	}
+}
+
+void green_callback0(const sensor_msgs::Image::ConstPtr& msg){greenCallback(msg, 0);}
+void green_callback1(const sensor_msgs::Image::ConstPtr& msg){greenCallback(msg, 1);}
+void green_callback2(const sensor_msgs::Image::ConstPtr& msg){greenCallback(msg, 2);}
+void green_callback3(const sensor_msgs::Image::ConstPtr& msg){greenCallback(msg, 3);}
+void green_callback4(const sensor_msgs::Image::ConstPtr& msg){greenCallback(msg, 4);}
+void green_callback5(const sensor_msgs::Image::ConstPtr& msg){greenCallback(msg, 5);}
+void green_callback6(const sensor_msgs::Image::ConstPtr& msg){greenCallback(msg, 6);}
+void green_callback7(const sensor_msgs::Image::ConstPtr& msg){greenCallback(msg, 7);}
+void green_callback8(const sensor_msgs::Image::ConstPtr& msg){greenCallback(msg, 8);}
+
+void blue_callback0(const sensor_msgs::Image::ConstPtr& msg){blueCallback(msg, 0);}
+void blue_callback1(const sensor_msgs::Image::ConstPtr& msg){blueCallback(msg, 1);}
+void blue_callback2(const sensor_msgs::Image::ConstPtr& msg){blueCallback(msg, 2);}
+void blue_callback3(const sensor_msgs::Image::ConstPtr& msg){blueCallback(msg, 3);}
+void blue_callback4(const sensor_msgs::Image::ConstPtr& msg){blueCallback(msg, 4);}
+void blue_callback5(const sensor_msgs::Image::ConstPtr& msg){blueCallback(msg, 5);}
+void blue_callback6(const sensor_msgs::Image::ConstPtr& msg){blueCallback(msg, 6);}
+void blue_callback7(const sensor_msgs::Image::ConstPtr& msg){blueCallback(msg, 7);}
+void blue_callback8(const sensor_msgs::Image::ConstPtr& msg){blueCallback(msg, 8);}
+
 
 void callbackstuck(const sensor_msgs::Image::ConstPtr& msg){
 	sensor_values_stuck = msg->data[18];
@@ -100,86 +175,26 @@ void callbackstuck(const sensor_msgs::Image::ConstPtr& msg){
 	}
 }
 
-//must have explore state like bernds... just copy bernds as much as possible.
-//OFCNeuron = new CtxNeuron(learning_rate_OFC, learning_rate_OFC * 0.1);
-//OFCNeuron->addInput(visual_direction_Green_trace);
-//OFCNeuron->addInput(visual_direction_Blue_trace);
-/*
-Greensw=limbic_system->getGreenOutput() * 2;
-// Returns CoreGreenOut from Limbic-system-model.cpp. CoreGreenOut = (mPFC_Green *core_weight_lg2lg)
-	// mpfc_green = mpfcneuron->doStep(visual_reward_green + OFC, serotoninConcentration) dostep is ctxneuron dostep. visual_reward_green = _visual_reward_green = 8th input to Limbic_system::doStep in robot.cpp = visual_reward_green = bool value determined by rewardDelayGreen == REWARD_DELAY = int 10 in robot.cpp but = 1 in reversal-5ht, so =1.
-		//OFC = OFCNeuron->doStep(reward, serotoninConcentration+0.1)
-			//reward = reward_filter->filter(_reward)
-				//_reward = 1st input to Limbic_system::doStep = reward in robot.cpp
-					//reward = set to either 0 or 1 by if(world->isReward(step,xp,yp)){reward=1}. if (REWARD_DELAY > 0){if(fabs(placefield1)>0){if(rewardDelayGreen>0){visual_reward_Green=0, rewardDelayGreen--,reward = 0}}} IS THIS WHAT SWITCHES WHEN BOT HITS REWARD?
-						//REWARD_DELAY = 1
-						//fabs() = std::fabs - absolute value of a float
-						//placefield1 = 2nd input to doStep. placefield1 = isPlacefield(0)
-							//isPlacefield() < if index=1 return 1, else return 0. So, placefield1 = 0;
-						//rewardDelayGreen = REWARD_DELAY = 1
-						//visual_reward_green = 8th inputto doStep (limbic). 0 if REWARD_DELAY >0, if fabs(placefield1)>0, rewardDelayGreen >0. 1 if rewardDelayGreen==0(rewardDelayGreen -- happens when visual_reward_Green is set to 0 meaning it is subsequently)
-		//serotoninConcentration = DRNto5HTrelease->filter(DRN);
-			//DRN = (LH + OFC * 4) / (1+RMTg * shunting_inhibition_factor + DRN_SUPPRESSION) + DRN_OFFSET
-				//LH = OFC
-				//DRN_SUPPRESSION = 0
-				//DRN_OFFSET = 0
-	//core_weight_lg2g set to 1 in limbic-system-model.h. fed into weightChange(). weightChange does core_weight_lg2lg = core_weight_lg2lg + (learning_rate_core*core_plasticity*mPFC_Green) between 0 and 1.
-		//learning_rate_core starts at 0.
-		// core plasticity = core_DA - VTA_zero_val.
-			//coreDA = VTA. VTA = (LH +VTA_baseline_activity) / (1+(RMTg + VTA_forwardinhibition->filter(OFC*0.1))*shunting_inhibition_factor) 
-				//shunting inhibition factor = 200
-				//LH = OFC
-				//VTA_baseline_activity=0.10
-				//RMTg = 0
-				//VTA_forwardinhibition = new SecondOrderLowpasFilter(0.01)
-			//VTA_zero_val = 0.0505
-//Limbic_system::doStep()
-//ctxneuron::doStep() = 
-// now... where does my simulation come in. I have:
-//Bools which switch when rat enters place.
-//bool which switches when rat gets reward.
-//bool that switches when rat can see reward.
-//float to measure distance from rat to reward.
-//change robot.cpp instance of reward to be set with callback?
-Bluesw=limbic_system->getBlueOutput() * 2;
-float exploreLeft=limbic_system->getExploreLeft(); //these should work as is? (limbic-system-model.h)
-float exploreRight=limbic_system->getExploreRight();
 
-if (Greensw > 1) {
-	Greensw=1;
-}
-
-if (Bluesw > 1) {
-	Bluesw=1;
-}
-
-Greendirection->doDirection(leftGreen,rightGreen,Greensw);
-Bluedirection->doDirection(leftBlue,rightBlue,Bluesw);
-
-float Greenspeed = Greendirection->getSpeed();
-float Bluespeed = Bluedirection->getSpeed(); //return weighted floats for tendency to move towards green and blue
-
-float exploreLeft=limbic_system->getExploreLeft(); //both are 0.1
-float exploreRight=limbic_system->getExploreRight();
-
-//dStep=ROBOT_SPEED*(Greenspeed+Bluespeed+exploreLeft+exploreRight)-BUMP_REVERSE_GAIN*f+BUMP_REVERSE_GAIN*b+sumStep; //turn this into something that works... ROBOT_SPEED is just 5
-msg.angular.z = 1(exploreRight-exploreLeft)
-*/
-//float OFC = OFCNeuron->doStep(reward, serotoninConcentration+0.1);
-//	if (OFC > 0.25) {
-//		OFC = 0.25;
-//	}
-
-//limbic_system=new Limbic_system();
-//Greendirection=new Direction();
-//Bluedirection=new Direction();
-
-//limbic_system->doStep()
-
-void calculateMotorSpeeds(geometry_msgs::Twist& msg){
+//if doesnt see pellet, should be in expore state, using getExploreLeft() and getExploreRight()
+void calculateMotorSpeedBlue(geometry_msgs::Twist& msg){
 	
-	if((sensor_values[8]/255.0) - (sensor_values[2]/255.0) != 0||(sensor_values[7]/255.0) -(sensor_values[3]/255.0) != 0||(sensor_values[6]/255.0) - (sensor_values[4]/255.0) != 0){
-		double error = (sensor_values[6]/255.0) + 2*(sensor_values[7]/255.0) + 3*(sensor_values[8]/255.0) - 3*(sensor_values[2]/255.0) - 2*(sensor_values[3]/255.0) - (sensor_values[4]/255.0);
+	if((blue_sensor_values[8]/255.0) - (blue_sensor_values[2]/255.0) != 0||(blue_sensor_values[7]/255.0) -(blue_sensor_values[3]/255.0) != 0||(blue_sensor_values[6]/255.0) - (blue_sensor_values[4]/255.0) != 0){
+		double error = (blue_sensor_values[6]/255.0) + 2*(blue_sensor_values[7]/255.0) + 3*(blue_sensor_values[8]/255.0) - 3*(blue_sensor_values[2]/255.0) - 2*(blue_sensor_values[3]/255.0) - (blue_sensor_values[4]/255.0);
+		msg.angular.z = -error*0.05; //if -ve turn left when see red, if +ve turn right when see red
+		msg.linear.y = 1;
+	} //compares 3rgb values from left sensor with 3rgb values from right sensor - doesnt take into account colour - wouldnt work if multiple objects introduced. (values 1 and 5 are not rgb values (should probably be 0 and 4 but counting starts in the wrong place. fix later))
+
+	else if(sensor_values_stuck/255.0 > 0.9) { // if it is almost white (0.0-1.0 is black-white)
+		msg.angular.z = 0.8;	//positive is clockwise
+	}
+
+}
+
+void calculateMotorSpeedGreen(geometry_msgs::Twist& msg){
+	
+	if((green_sensor_values[8]/255.0) - (green_sensor_values[2]/255.0) != 0||(green_sensor_values[7]/255.0) -(green_sensor_values[3]/255.0) != 0||(green_sensor_values[6]/255.0) - (green_sensor_values[4]/255.0) != 0){
+		double error = (green_sensor_values[6]/255.0) + 2*(green_sensor_values[7]/255.0) + 3*(green_sensor_values[8]/255.0) - 3*(green_sensor_values[2]/255.0) - 2*(green_sensor_values[3]/255.0) - (green_sensor_values[4]/255.0);
 		msg.angular.z = -error*0.05; //if -ve turn left when see red, if +ve turn right when see red
 	} //compares 3rgb values from left sensor with 3rgb values from right sensor - doesnt take into account colour - wouldnt work if multiple objects introduced. (values 1 and 5 are not rgb values (should probably be 0 and 4 but counting starts in the wrong place. fix later))
 
@@ -188,48 +203,160 @@ void calculateMotorSpeeds(geometry_msgs::Twist& msg){
 	}
 
 }
+
+void ratExplore(geometry_msgs::Twist& msg)
+{
+	float explore_left =limbic_system.getExploreLeft();
+	float explore_right =limbic_system.getExploreRight();
+	ROS_INFO("%f", explore_left);
+	if (green_sight == 0 && blue_sight == 0 && reward_seen ==0) //dont see landmark
+	{
+		msg.angular.z = 10*(explore_right-explore_left);//can make random amount of turn by multiplying both my rand.
+		
+		if (explore_left > 0 || explore_right >0)
+		{
+			msg.linear.y = 1;
+		}
+		else
+		{
+			msg.linear.y = 0;
+		}
+	}
+
+	else //see landmark
+	{
+		float Greensw=limbic_system.getGreenOutput() * 2;
+		float Bluesw=limbic_system.getBlueOutput() * 2;
+		if (Greensw > 1) {
+			Greensw=1;
+		}
+		if (Bluesw > 1) {
+			Bluesw=1;
+		}
+		//green/blue output increases as tendency to move to that colour does, so code that...(up to 1)
+
+		if (blue_sight != 0)
+		{
+			if (Bluesw>=rand())
+			{
+				calculateMotorSpeedBlue(msg);	
+			}
+		
+			else
+			{
+				msg.angular.z = 10*(explore_right-explore_left);
+			}
+			
+		}
+		else if(green_sight != 0)
+		{
+			if (Greensw>=rand())
+			{
+				calculateMotorSpeedGreen(msg);	
+			}
+		
+			else
+			{
+				msg.angular.z = 10*(explore_right-explore_left);
+			}
+		}
+		else if(reward_seen != 0)
+		{
+			msg.angular.z = 0;
+			msg.linear.y = 1;
+			//move towards reward
+		}
+	}
+}
+
 /*===============================================================================================*/
 
 int main(int argc, char **argv){
 
 	ros::init(argc, argv, "enki_btb_react_control_node");
 	ros::NodeHandle nh;
-	ros::Subscriber eyes[9];
+	ros::Subscriber eyes[18];
 	ros::Subscriber stuck;
 	ros::Subscriber limbic_signals[9];
 	
-	eyes[0] = nh.subscribe("mybot/colour_camera/image_raw", 1, callback0);
-	eyes[1] = nh.subscribe("mybot/colour_camera/image_raw", 1, callback1);
-	eyes[2] = nh.subscribe("mybot/colour_camera/image_raw", 1, callback2);
-	eyes[3] = nh.subscribe("mybot/colour_camera/image_raw", 1, callback3);
-	eyes[4] = nh.subscribe("mybot/colour_camera/image_raw", 1, callback4);
-	eyes[5] = nh.subscribe("mybot/colour_camera/image_raw", 1, callback5);
-	eyes[6] = nh.subscribe("mybot/colour_camera/image_raw", 1, callback6);
-	eyes[7] = nh.subscribe("mybot/colour_camera/image_raw", 1, callback7);
-	eyes[8] = nh.subscribe("mybot/colour_camera/image_raw", 1, callback8);
+	eyes[0] = nh.subscribe("mybot/colour_camera/image_raw", 1, green_callback0);
+	eyes[1] = nh.subscribe("mybot/colour_camera/image_raw", 1, green_callback1);
+	eyes[2] = nh.subscribe("mybot/colour_camera/image_raw", 1, green_callback2);
+	eyes[3] = nh.subscribe("mybot/colour_camera/image_raw", 1, green_callback3);
+	eyes[4] = nh.subscribe("mybot/colour_camera/image_raw", 1, green_callback4);
+	eyes[5] = nh.subscribe("mybot/colour_camera/image_raw", 1, green_callback5);
+	eyes[6] = nh.subscribe("mybot/colour_camera/image_raw", 1, green_callback6);
+	eyes[7] = nh.subscribe("mybot/colour_camera/image_raw", 1, green_callback7);
+	eyes[8] = nh.subscribe("mybot/colour_camera/image_raw", 1, green_callback8);
 	stuck = nh.subscribe("mybot/colour_camera/image_raw", 1, callbackstuck);
 
+	eyes[9] = nh.subscribe("mybot/colour_camera/image_raw", 1, blue_callback0);
+	eyes[10] = nh.subscribe("mybot/colour_camera/image_raw", 1, blue_callback1);
+	eyes[11] = nh.subscribe("mybot/colour_camera/image_raw", 1, blue_callback2);
+	eyes[12] = nh.subscribe("mybot/colour_camera/image_raw", 1, blue_callback3);
+	eyes[13] = nh.subscribe("mybot/colour_camera/image_raw", 1, blue_callback4);
+	eyes[14] = nh.subscribe("mybot/colour_camera/image_raw", 1, blue_callback5);
+	eyes[15] = nh.subscribe("mybot/colour_camera/image_raw", 1, blue_callback6);
+	eyes[16] = nh.subscribe("mybot/colour_camera/image_raw", 1, blue_callback7);
+	eyes[17] = nh.subscribe("mybot/colour_camera/image_raw", 1, blue_callback8);
+	
 	limbic_signals[0] = nh.subscribe("mybot/isRewarded", 1, rewardCallback);
 	limbic_signals[1] = nh.subscribe("mybot/seeBlue", 1, seeBlueLandmarkCallback);
 	limbic_signals[2] = nh.subscribe("mybot/seeGreen",1, seeGreenLandmarkCallback);
 	limbic_signals[3] = nh.subscribe("mybot/seeReward", 1, rewardDistanceCallback);
 	limbic_signals[4] = nh.subscribe("mybot/inPlaceBlue",1, bluePlaceCallback);
 	limbic_signals[5] = nh.subscribe("mybot/inPlaceGreen", 1, greenPlaceCallback);
-	//limbic_signals[6] = nh.subscribe("mybot/on_contact_blue", 1 , on);
-	//limbic_signals[7];
-	
-	//limbic_signals[6] = nh.subscribe("mybot/",1,);
-
+	limbic_signals[6] = nh.subscribe("mybot/contactBlue", 1 , onContactBlue);
+	limbic_signals[7] = nh.subscribe("mybot/contactGreen", 1, onContactGreen);
+	/*
+	ROS_INFO("%s", "reward: ");
+	ROS_INFO("%f", reward);
+	ROS_INFO("%s", "blue_placefield: ");
+	ROS_INFO("%f", blue_placefield);
+	ROS_INFO("%s", "green_placefield");
+	ROS_INFO("%f", green_placefield);
+	ROS_INFO("%s", "blue_sight");
+	ROS_INFO("%f", blue_sight);
+	ROS_INFO("%s", "blue_distance");
+	ROS_INFO("%f", blue_distance);
+	ROS_INFO("%s", "green_sight");
+	ROS_INFO("%f", green_sight);
+	ROS_INFO("%s", "green_distance");
+	ROS_INFO("%f", green_distance);
+	ROS_INFO("%s", "reward_distance");
+	ROS_INFO("%f", reward_distance);
+	ROS_INFO("%s", "reward_seen");
+	ROS_INFO("%f", reward_seen);
+	ROS_INFO("%s", "on_contact_blue");
+	ROS_INFO("%f", on_contact_blue);
+	ROS_INFO("%s", "on_contact_green");
+	ROS_INFO("%f", on_contact_green);
+	*/
 	ros::Publisher vel_pub = nh.advertise<geometry_msgs::Twist>("mybot/cmd_vel", 1);
 
 	ros::Rate loop_rate(60);
 
+	geometry_msgs::Twist vel;
+	const sensor_msgs::Image bmsg;
+	const sensor_msgs::Image gmsg;
 	while(ros::ok()){
-	
 		if(flag){
 			flag = false;
-			geometry_msgs::Twist vel;
-			calculateMotorSpeeds(vel);
+			int colour_seen=colourCheck();
+			ROS_INFO("%d", colour_seen);
+			switch(colour_seen){
+			case 1: //green
+				calculateMotorSpeedGreen(vel);
+				break;
+			case 2: //blue
+				calculateMotorSpeedBlue(vel);
+				break;
+			case 0: //exlpore
+				//ROS_INFO("%f", green_sight);
+				ratExplore(vel);//need sight vals in here..., blue_sight, reward_seen, vel);
+				break;
+			
+			}	
 			vel_pub.publish(vel);
 		}
 	

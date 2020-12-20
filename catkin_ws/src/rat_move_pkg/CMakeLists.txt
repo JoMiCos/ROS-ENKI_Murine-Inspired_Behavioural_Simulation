@@ -154,8 +154,13 @@ include_directories(
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+set(enki_LIBRARY /usr/local/lib/libenki.a)
 
-add_executable(rat_move rat_move.cpp)
+set(SOURCES rat_move.cpp Brain/limbic-system-model.cpp Brain/filter.cpp Brain/ctxneuron.cpp)
+
+include_directories(/usr/local/include/enki)
+
+add_executable(rat_move ${SOURCES})#rat_move.cpp)
 add_dependencies(rat_move ${simple_topic_publisher.cpp} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(rat_move
 	${catkin_LIBRARIES}
