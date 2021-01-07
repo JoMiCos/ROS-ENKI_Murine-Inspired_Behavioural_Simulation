@@ -21,6 +21,7 @@
 #include "Brain/robot.h"
 static int blue_sensor_values[9];
 static int green_sensor_values[9];
+static int reward_sensor_values[9];
 
 static int sensor_values_stuck;
 static int count; 
@@ -34,13 +35,19 @@ static float blue_distance;
 static float green_sight;
 static float green_distance;
 static float reward_distance;
-static float reward_seen;
+static float reward_sight;
 static float on_contact_blue;
 static float on_contact_green;
+static float explore_left;
+static float explore_right;
+static float Greensw;
+static float Bluesw;
+
+static double rm = RAND_MAX;
 
 Limbic_system limbic_system;
 
-void rewardCallback(const std_msgs::Float32::ConstPtr& msg)
+void rewardSignalCallback(const std_msgs::Float32::ConstPtr& msg)
 {
 	float reward = msg->data;
 }
@@ -84,7 +91,7 @@ void onContactGreen(const std_msgs::Float32::ConstPtr& msg)
 }
 
 void greenCallback(const sensor_msgs::Image::ConstPtr& msg, int index){
-	green_sensor_values[index] = msg->data[(81*1)+index*9+6];
+	green_sensor_values[index] = msg->data[(80*1)+index*24+1];
 	//ROS_INFO("%s", "-----------");
 	//ROS_INFO("%d", index);
 	//ROS_INFO("%d", sensor_values[index]);
@@ -99,7 +106,7 @@ void greenCallback(const sensor_msgs::Image::ConstPtr& msg, int index){
 }
 
 void blueCallback(const sensor_msgs::Image::ConstPtr& msg, int index){
-	blue_sensor_values[index] = msg->data[(81*1)+index*9+7];
+	blue_sensor_values[index] = msg->data[(80*1)+index*24+2];
 	//ROS_INFO("%s", "-----------");
 	//ROS_INFO("%d", index);
 	//ROS_INFO("%d", sensor_values[index]);
@@ -113,26 +120,61 @@ void blueCallback(const sensor_msgs::Image::ConstPtr& msg, int index){
 	}
 }
 
+void rewardCallback(const sensor_msgs::Image::ConstPtr& msg, int index){
+	reward_sensor_values[index] = msg->data[(80*1)+index*24+0];
+	//ROS_INFO("%s", "-----------");
+	//ROS_INFO("%d", index);
+	//ROS_INFO("%d", sensor_values[index]);
+		//81*1 shift to red data (from rgba)
+		//index*9 to get desired row
+		//+5 to get to the middle of the row
+	count++;
+	if(count==9){
+		count=0;
+		flag = true;
+	}
+}
+
+void limbicCallback(const geometry_msgs::Twist limbic)
+{
+	explore_left = limbic.angular.x;
+	explore_right = limbic.angular.y;
+
+	Greensw = limbic.linear.x;
+	Bluesw = limbic.linear.y;
+
+}
+
 int colourCheck()//const sensor_msgs::Image::ConstPtr& msg)
 {	
 	int colour_check;
 	int green_sum{};
 	int blue_sum{};
+	int reward_sum{};
 	for (int i=0;i<9;i++)
 	{
 		green_sum = green_sum+green_sensor_values[i]; 
+		
 	}
 	for (int i=0;i<9;i++)
 	{
 		blue_sum = blue_sum+blue_sensor_values[i]; 
 	}
-
-	if (green_sum/9 > 225) //225 -> 8/9*255 to allow for errors
+	for (int i=0;i<9;i++)
+	{
+		reward_sum = reward_sum+reward_sensor_values[i]; 
+	}
+	if (reward_sum/9 >30)
+	{
+		colour_check = 3;
+		return colour_check;
+	}	
+	else if (green_sum/9 > 30) //225 -> 8/9*255 to allow for errors
 	{
 		colour_check = 1;
 		return colour_check;
 	}
-	else if (blue_sum/9 >225)
+	else if (blue_sum/9 >30)
 	{
 		colour_check = 2;
 		return colour_check;
@@ -143,6 +185,8 @@ int colourCheck()//const sensor_msgs::Image::ConstPtr& msg)
 		return colour_check;
 	}
 }
+
+
 
 void green_callback0(const sensor_msgs::Image::ConstPtr& msg){greenCallback(msg, 0);}
 void green_callback1(const sensor_msgs::Image::ConstPtr& msg){greenCallback(msg, 1);}
@@ -164,6 +208,16 @@ void blue_callback6(const sensor_msgs::Image::ConstPtr& msg){blueCallback(msg, 6
 void blue_callback7(const sensor_msgs::Image::ConstPtr& msg){blueCallback(msg, 7);}
 void blue_callback8(const sensor_msgs::Image::ConstPtr& msg){blueCallback(msg, 8);}
 
+void reward_callback0(const sensor_msgs::Image::ConstPtr& msg){rewardCallback(msg, 0);}
+void reward_callback1(const sensor_msgs::Image::ConstPtr& msg){rewardCallback(msg, 1);}
+void reward_callback2(const sensor_msgs::Image::ConstPtr& msg){rewardCallback(msg, 2);}
+void reward_callback3(const sensor_msgs::Image::ConstPtr& msg){rewardCallback(msg, 3);}
+void reward_callback4(const sensor_msgs::Image::ConstPtr& msg){rewardCallback(msg, 4);}
+void reward_callback5(const sensor_msgs::Image::ConstPtr& msg){rewardCallback(msg, 5);}
+void reward_callback6(const sensor_msgs::Image::ConstPtr& msg){rewardCallback(msg, 6);}
+void reward_callback7(const sensor_msgs::Image::ConstPtr& msg){rewardCallback(msg, 7);}
+void reward_callback8(const sensor_msgs::Image::ConstPtr& msg){rewardCallback(msg, 8);}
+
 
 void callbackstuck(const sensor_msgs::Image::ConstPtr& msg){
 	sensor_values_stuck = msg->data[18];
@@ -178,55 +232,73 @@ void callbackstuck(const sensor_msgs::Image::ConstPtr& msg){
 
 //if doesnt see pellet, should be in expore state, using getExploreLeft() and getExploreRight()
 void calculateMotorSpeedBlue(geometry_msgs::Twist& msg){
-	
-	if((blue_sensor_values[8]/255.0) - (blue_sensor_values[2]/255.0) != 0||(blue_sensor_values[7]/255.0) -(blue_sensor_values[3]/255.0) != 0||(blue_sensor_values[6]/255.0) - (blue_sensor_values[4]/255.0) != 0){
-		double error = (blue_sensor_values[6]/255.0) + 2*(blue_sensor_values[7]/255.0) + 3*(blue_sensor_values[8]/255.0) - 3*(blue_sensor_values[2]/255.0) - 2*(blue_sensor_values[3]/255.0) - (blue_sensor_values[4]/255.0);
+		double error = (blue_sensor_values[6]/255.0) + 2*(blue_sensor_values[7]/255.0) + 3*(blue_sensor_values[8]/255.0) - 3*(blue_sensor_values[0]/255.0) - 2*(blue_sensor_values[1]/255.0) - (blue_sensor_values[2]/255.0);
+		
+		//ROS_INFO("%f", error);
 		msg.angular.z = -error*0.05; //if -ve turn left when see red, if +ve turn right when see red
 		msg.linear.y = 1;
-	} //compares 3rgb values from left sensor with 3rgb values from right sensor - doesnt take into account colour - wouldnt work if multiple objects introduced. (values 1 and 5 are not rgb values (should probably be 0 and 4 but counting starts in the wrong place. fix later))
+	 //compares 3rgb values from left sensor with 3rgb values from right sensor - doesnt take into account colour - wouldnt work if multiple objects introduced. (values 1 and 5 are not rgb values (should probably be 0 and 4 but counting starts in the wrong place. fix later))
 
-	else if(sensor_values_stuck/255.0 > 0.9) { // if it is almost white (0.0-1.0 is black-white)
-		msg.angular.z = 0.8;	//positive is clockwise
-	}
 
 }
 
 void calculateMotorSpeedGreen(geometry_msgs::Twist& msg){
 	
-	if((green_sensor_values[8]/255.0) - (green_sensor_values[2]/255.0) != 0||(green_sensor_values[7]/255.0) -(green_sensor_values[3]/255.0) != 0||(green_sensor_values[6]/255.0) - (green_sensor_values[4]/255.0) != 0){
-		double error = (green_sensor_values[6]/255.0) + 2*(green_sensor_values[7]/255.0) + 3*(green_sensor_values[8]/255.0) - 3*(green_sensor_values[2]/255.0) - 2*(green_sensor_values[3]/255.0) - (green_sensor_values[4]/255.0);
-		msg.angular.z = -error*0.05; //if -ve turn left when see red, if +ve turn right when see red
-	} //compares 3rgb values from left sensor with 3rgb values from right sensor - doesnt take into account colour - wouldnt work if multiple objects introduced. (values 1 and 5 are not rgb values (should probably be 0 and 4 but counting starts in the wrong place. fix later))
-
-	else if(sensor_values_stuck/255.0 > 0.9) { // if it is almost white (0.0-1.0 is black-white)
-		msg.angular.z = 0.8;	//positive is clockwise
-	}
-
+	double error = (green_sensor_values[6]/255.0) + 2*(green_sensor_values[7]/255.0) + 3*(green_sensor_values[8]/255.0) - 3*(green_sensor_values[0]/255.0) - 2*(green_sensor_values[1]/255.0) - (green_sensor_values[2]/255.0);
+		msg.angular.z = -error*0.05;
 }
 
-void ratExplore(geometry_msgs::Twist& msg)
+void calculateMotorSpeedReward(geometry_msgs::Twist& msg){
+	
+		//double error = (reward_sensor_values[6]/255.0) + 2*(reward_sensor_values[7]/255.0) + 3*(reward_sensor_values[8]/255.0) - 3*(reward_sensor_values[2]/255.0) - 2*(reward_sensor_values[3]/255.0) - (reward_sensor_values[4]/255.0);
+		double error = (reward_sensor_values[6]/255.0) + 2*(reward_sensor_values[7]/255.0) + 3*(reward_sensor_values[8]/255.0) - 3*(reward_sensor_values[0]/255.0) - 2*(reward_sensor_values[1]/255.0) - (reward_sensor_values[2]/255.0);
+		
+		msg.angular.z = -error*0.05; //if -ve turn left when see red, if +ve turn right when see red
+}
+
+void ratExplore(geometry_msgs::Twist& vel)
 {
-	float explore_left =limbic_system.getExploreLeft();
-	float explore_right =limbic_system.getExploreRight();
-	ROS_INFO("%f", explore_left);
-	if (green_sight == 0 && blue_sight == 0 && reward_seen ==0) //dont see landmark
+	
+	ROS_INFO("%s", "-------------");
+	//ROS_INFO("%f", explore_left);
+	//ROS_INFO("%f", explore_right);
+	//ROS_INFO("%f", Bluesw);
+	//ROS_INFO("%f", Greensw);
+	//ROS_INFO("%f", reward_sight);
+	ROS_INFO("%d", blue_sensor_values[0]);
+	ROS_INFO("%d", blue_sensor_values[1]);
+	ROS_INFO("%d", blue_sensor_values[2]);
+	ROS_INFO("%d", blue_sensor_values[3]);
+	ROS_INFO("%d", blue_sensor_values[4]);
+	ROS_INFO("%d", blue_sensor_values[5]);
+	ROS_INFO("%d", blue_sensor_values[6]);
+	ROS_INFO("%d", blue_sensor_values[7]);
+	ROS_INFO("%d", blue_sensor_values[8]);
+
+	
+	if(sensor_values_stuck/255.0 > 0.9) 
+		{ // if it is almost white (0.0-1.0 is black-white)
+			vel.angular.z = 0.7;
+			vel.linear.y = 1;		//positive is clockwise
+		}
+
+	else if (green_sight == 0 && blue_sight == 0 && reward_sight ==0) //dont see landmark
 	{
-		msg.angular.z = 10*(explore_right-explore_left);//can make random amount of turn by multiplying both my rand.
+		//ROS_INFO("%s", "dont see anything");
+		vel.angular.z = 10*(explore_right-explore_left);//can make random amount of turn by multiplying both my rand.
 		
 		if (explore_left > 0 || explore_right >0)
 		{
-			msg.linear.y = 1;
+			vel.linear.y = 1;
 		}
 		else
 		{
-			msg.linear.y = 0;
+			vel.linear.y = 1; //should be 0? want to stop until reward appears
 		}
 	}
 
 	else //see landmark
 	{
-		float Greensw=limbic_system.getGreenOutput() * 2;
-		float Bluesw=limbic_system.getBlueOutput() * 2;
 		if (Greensw > 1) {
 			Greensw=1;
 		}
@@ -234,38 +306,42 @@ void ratExplore(geometry_msgs::Twist& msg)
 			Bluesw=1;
 		}
 		//green/blue output increases as tendency to move to that colour does, so code that...(up to 1)
-
-		if (blue_sight != 0)
+		
+		if(reward_sight != 0)
 		{
-			if (Bluesw>=rand())
+			//ROS_INFO("%s", "see reward");
+			calculateMotorSpeedReward(vel);
+			
+		}
+		else if (blue_sight != 0)
+		{	
+			if (Bluesw>=rand()/rm)
 			{
-				calculateMotorSpeedBlue(msg);	
+				//ROS_INFO("%s", "see blue");
+				calculateMotorSpeedBlue(vel);	
 			}
 		
 			else
 			{
-				msg.angular.z = 10*(explore_right-explore_left);
+				vel.angular.z = 10*(explore_right-explore_left);
+				vel.linear.y = 1;
 			}
 			
 		}
 		else if(green_sight != 0)
 		{
-			if (Greensw>=rand())
+			//ROS_INFO("%s", "see green");
+			if (Greensw>=rand()/rm)
 			{
-				calculateMotorSpeedGreen(msg);	
+				calculateMotorSpeedGreen(vel);	
 			}
 		
 			else
 			{
-				msg.angular.z = 10*(explore_right-explore_left);
+				vel.angular.z = 10*(explore_right-explore_left);
 			}
 		}
-		else if(reward_seen != 0)
-		{
-			msg.angular.z = 0;
-			msg.linear.y = 1;
-			//move towards reward
-		}
+		
 	}
 }
 
@@ -275,9 +351,10 @@ int main(int argc, char **argv){
 
 	ros::init(argc, argv, "enki_btb_react_control_node");
 	ros::NodeHandle nh;
-	ros::Subscriber eyes[18];
+	ros::Subscriber eyes[27];
 	ros::Subscriber stuck;
 	ros::Subscriber limbic_signals[9];
+	ros::Subscriber reversal5ht;
 	
 	eyes[0] = nh.subscribe("mybot/colour_camera/image_raw", 1, green_callback0);
 	eyes[1] = nh.subscribe("mybot/colour_camera/image_raw", 1, green_callback1);
@@ -300,7 +377,17 @@ int main(int argc, char **argv){
 	eyes[16] = nh.subscribe("mybot/colour_camera/image_raw", 1, blue_callback7);
 	eyes[17] = nh.subscribe("mybot/colour_camera/image_raw", 1, blue_callback8);
 	
-	limbic_signals[0] = nh.subscribe("mybot/isRewarded", 1, rewardCallback);
+	eyes[18] = nh.subscribe("mybot/colour_camera/image_raw", 1, reward_callback0);
+	eyes[19] = nh.subscribe("mybot/colour_camera/image_raw", 1, reward_callback1);
+	eyes[20] = nh.subscribe("mybot/colour_camera/image_raw", 1, reward_callback2);
+	eyes[21] = nh.subscribe("mybot/colour_camera/image_raw", 1, reward_callback3);
+	eyes[22] = nh.subscribe("mybot/colour_camera/image_raw", 1, reward_callback4);
+	eyes[23] = nh.subscribe("mybot/colour_camera/image_raw", 1, reward_callback5);
+	eyes[24] = nh.subscribe("mybot/colour_camera/image_raw", 1, reward_callback6);
+	eyes[25] = nh.subscribe("mybot/colour_camera/image_raw", 1, reward_callback7);
+	eyes[26] = nh.subscribe("mybot/colour_camera/image_raw", 1, reward_callback8);
+	
+	limbic_signals[0] = nh.subscribe("mybot/isRewarded", 1, rewardSignalCallback);
 	limbic_signals[1] = nh.subscribe("mybot/seeBlue", 1, seeBlueLandmarkCallback);
 	limbic_signals[2] = nh.subscribe("mybot/seeGreen",1, seeGreenLandmarkCallback);
 	limbic_signals[3] = nh.subscribe("mybot/seeReward", 1, rewardDistanceCallback);
@@ -308,6 +395,8 @@ int main(int argc, char **argv){
 	limbic_signals[5] = nh.subscribe("mybot/inPlaceGreen", 1, greenPlaceCallback);
 	limbic_signals[6] = nh.subscribe("mybot/contactBlue", 1 , onContactBlue);
 	limbic_signals[7] = nh.subscribe("mybot/contactGreen", 1, onContactGreen);
+	
+	reversal5ht = nh.subscribe("mybot/limbic",1,limbicCallback);
 	/*
 	ROS_INFO("%s", "reward: ");
 	ROS_INFO("%f", reward);
@@ -342,21 +431,34 @@ int main(int argc, char **argv){
 	while(ros::ok()){
 		if(flag){
 			flag = false;
+			
 			int colour_seen=colourCheck();
-			ROS_INFO("%d", colour_seen);
+			//ROS_INFO("%d", colour_seen);
 			switch(colour_seen){
 			case 1: //green
-				calculateMotorSpeedGreen(vel);
+				green_sight=1;
+				blue_sight=0;
+				reward_sight=0;
 				break;
 			case 2: //blue
-				calculateMotorSpeedBlue(vel);
+				blue_sight=1;
+				green_sight=0;
+				reward_sight=0;
 				break;
+			case 3: //reward
+				blue_sight=0;
+				green_sight=0;
+				reward_sight=1;
+				break;	
 			case 0: //exlpore
-				//ROS_INFO("%f", green_sight);
-				ratExplore(vel);//need sight vals in here..., blue_sight, reward_seen, vel);
+				blue_sight=0;
+				green_sight=0;
+				reward_sight=0;
 				break;
-			
-			}	
+			}
+			//ROS_INFO("%f", green_sight);
+			ratExplore(vel);
+				
 			vel_pub.publish(vel);
 		}
 	

@@ -61,10 +61,10 @@
 #define NETWORKGAIN 10
 #define PREDGAIN 100
 
-#define GREENPELLETX 45 //max*9/50 maxx=250
-#define GREENPELLETY 180 //max*4/5 -20 
+#define GREENPELLETX 60 //max*9/50 maxx=250
+#define GREENPELLETY 185 //max*4/5 -20 
 
-#define BLUEPELLETX 205
-#define BLUEPELLETY 180
+#define BLUEPELLETX 190
+#define BLUEPELLETY 185
 
 

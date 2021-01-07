@@ -82,11 +82,15 @@ static float green_distance;
 static float blue_distance;
 static float green_place;
 static float blue_place;
+static float explore_left;
+static float explore_right;
+static bool rewardSet;
 
 static double	maxx = 250;
 static double	maxy = 250;
 static double   racerx = (maxx/2)+30;
 static double   racery = (maxy/2) +5;
+static uint8_t rewards_before_switch = 1;
 
 int countSteps=0;
 int countRuns=0;
@@ -95,11 +99,14 @@ int firstStep =1; //so that it does propInputs once and then back/forth in that 
 
 int nInputs= ROW1N+ROW2N+ROW3N; //this cannot be an odd number for icoLearner
 
-int reward_counter{0};
-static bool reward_flag = 0;
+static bool reward_flagG = 0;
+static bool reward_flagB = 0;
 static bool start_timer{0};
 static auto start = system_clock::now();
 static seconds delay(21);//21==0????
+uint8_t rewardcount{0};
+
+
 //needs if in circle - change this to colour based on camera
 /*
 void rewardDelay(seconds Delay){
@@ -199,7 +206,7 @@ void getDistanceReward(Enki::Racer* racer, Enki::PhysicalObject* pellet, enki_ro
 }
 *///ROS^
 //NON ROS v
-void rewardDelay(seconds Delay){
+void rewardDelayB(seconds Delay){
     if (start_timer = 0){
         start = system_clock::now();
         start_timer = 1;
@@ -207,7 +214,24 @@ void rewardDelay(seconds Delay){
     if ((start_timer = 1) && (system_clock::now() - start) > (delay)){
    // if (reward_counter = delay)
     //{
-        reward_flag=1;
+        reward_flagB=1;
+        start_timer=0;
+    //    reward_counter=0;
+    //}
+    //else
+    //{
+    //    reward_counter++;
+    }
+}
+void rewardDelayG(seconds Delay){
+    if (start_timer = 0){
+        start = system_clock::now();
+        start_timer = 1;
+    }
+    if ((start_timer = 1) && (system_clock::now() - start) > (delay)){
+   // if (reward_counter = delay)
+    //{
+        reward_flagG=1;
         start_timer=0;
     //    reward_counter=0;
     //}
@@ -217,21 +241,52 @@ void rewardDelay(seconds Delay){
     }
 }
 
-
-float rewardBool(Enki::Racer* racer, Enki::PhysicalObject* pellet, double racerx, double racery, double circleCentreX, double circleCentreY, double circleRad) // (racer->pos, pellet->pos)
+float rewardBoolB(Enki::Racer* racer, Enki::PhysicalObject* pellet, double racerx, double racery, double circleCentreX, double circleCentreY, double circleRad) // (racer->pos, pellet->pos)
 {
     if ((racer->pos.x >= (circleCentreX - circleRad)) && (racer->pos.x <= (circleCentreX + circleRad)) && (racer->pos.y <= (circleCentreY + circleRad)) && (racer->pos.y >= (circleCentreY - circleRad))){
-    rewardDelay(delay);
-        if (reward_flag){
+    rewardDelayB(delay);
+        if (reward_flagB){
             //ROS_INFO("%s", "flag = true");
             pellet->setColor(Enki::Color(1,0,0));
             //if (sqrt((racer->pos.x - _pellet.name->pos.x)*(racer->pos.x - _pellet.name->pos.x)+(racer->pos.y - _pellet.name->pos.y)*(racer->pos.y - _pellet.name->pos.y))<13.0)
-            if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<13.0)
+            if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<14.0)
             {	//robot half length + food radius = 10+2 = 12
                 reward = 1; 
-                racer->pos = Point(racerx, racery);
-                reward_flag=0;
                 pellet->setColor(Enki::Color(0,0,1));
+                racer->pos = Point(racerx, racery);
+                reward_flagB=0;
+                rewardcount++;
+                
+            }
+            else
+            {
+                reward = 0;
+            }
+        }
+        else
+        {
+            //ROS_INFO("%s", "flag = false");
+        }
+    }
+    return reward;
+}
+
+float rewardBoolG(Enki::Racer* racer, Enki::PhysicalObject* pellet, double racerx, double racery, double circleCentreX, double circleCentreY, double circleRad) // (racer->pos, pellet->pos)
+{
+    if ((racer->pos.x >= (circleCentreX - circleRad)) && (racer->pos.x <= (circleCentreX + circleRad)) && (racer->pos.y <= (circleCentreY + circleRad)) && (racer->pos.y >= (circleCentreY - circleRad))){
+    rewardDelayG(delay);
+        if (reward_flagG){
+            //ROS_INFO("%s", "flag = true");
+            pellet->setColor(Enki::Color(1,0,0));
+            //if (sqrt((racer->pos.x - _pellet.name->pos.x)*(racer->pos.x - _pellet.name->pos.x)+(racer->pos.y - _pellet.name->pos.y)*(racer->pos.y - _pellet.name->pos.y))<13.0)
+            if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<14.0)
+            {	//robot half length + food radius = 10+2 = 12
+                reward = 1; 
+                pellet->setColor(Enki::Color(0,1,0));
+                racer->pos = Point(racerx, racery);
+                reward_flagG=0;
+                rewardcount++;
+                
             }
             else
             {
@@ -248,10 +303,11 @@ float rewardBool(Enki::Racer* racer, Enki::PhysicalObject* pellet, double racerx
 
 float on_contact_direction_blue(Enki::Racer* racer, Enki::PhysicalObject* pellet)
 {
-    if (reward_flag==0){
-        if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<13.0)
+    if (reward_flagB==0){
+        if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<14.0)
         {	//robot half length + food radius = 10+2 = 12
             contactBlue = 1;
+            racer->pos = Point(racerx, racery);
         }
         else
         {
@@ -263,10 +319,12 @@ float on_contact_direction_blue(Enki::Racer* racer, Enki::PhysicalObject* pellet
 
 float on_contact_direction_green(Enki::Racer* racer, Enki::PhysicalObject* pellet)
 {
-    if (reward_flag==0){
-        if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<13.0)
+    if (reward_flagG==0){
+        if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<14.0)
         {	//robot half length + food radius = 10+2 = 12
             contactGreen = 1;
+            racer->pos = Point(racerx, racery);
+                
         }
         else
         {
@@ -278,7 +336,7 @@ float on_contact_direction_green(Enki::Racer* racer, Enki::PhysicalObject* pelle
 
 float getDistanceRewardGreen(Enki::Racer* racer, Enki::PhysicalObject* pellet, float centrex, float centrey, float radius)
 {
-    if (reward_flag == 1)
+    if (reward_flagG == 1)
     {
         float xdistance = sqrt((racer->pos.x -  pellet->pos.x)*(racer->pos.x -  pellet->pos.x));
         float ydistance = sqrt((racer->pos.y - pellet->pos.y)*(racer->pos.y- pellet->pos.y));
@@ -300,7 +358,7 @@ float getDistanceRewardGreen(Enki::Racer* racer, Enki::PhysicalObject* pellet, f
 
 float getDistanceRewardBlue(Enki::Racer* racer, Enki::PhysicalObject* pellet, float centrex, float centrey, float radius)
 {
-    if (reward_flag == 1)
+    if (reward_flagB == 1)
     {
         float xdistance = sqrt((racer->pos.x -  pellet->pos.x)*(racer->pos.x -  pellet->pos.x));
         float ydistance = sqrt((racer->pos.y - pellet->pos.y)*(racer->pos.y- pellet->pos.y));
@@ -314,7 +372,7 @@ float getDistanceRewardBlue(Enki::Racer* racer, Enki::PhysicalObject* pellet, fl
     }
     else
     {
-       blue_reward_distance = 0;
+        blue_reward_distance = 0;
         blue_reward_sight = 0;
     }
     return blue_reward_distance;
@@ -424,20 +482,29 @@ float placeBoolBlue(Enki::Racer* racer, double circleCentreX, double circleCentr
 class EnkiPlayground : public EnkiWidget
 {
 private:
-
+    //Limbic_system ls;
     //callback function for neural network output to set motor speeds
     void motors_callback(const geometry_msgs::Twist::ConstPtr& msg){
         //random mapping I have assigned
         //need to find a way of doing this properly
         //racer->leftSpeed = msg->angular.z;
         //racer->rightSpeed = msg->angular.y;
-
+        
+	
         double angular_speed = msg->angular.z;
-
+        double linear = msg->linear.y;
         //both will be 30 speed //used to multiply by 18
-        racer->leftSpeed = (angular_speed*50.0) + 30.0;
-        racer->rightSpeed = (angular_speed*(-50.0)) + 30.0;
-
+        if(linear>0)
+        {
+        racer->leftSpeed = (angular_speed*50.0) + 60.0;
+        racer->rightSpeed = (angular_speed*(-50.0)) + 60.0;
+        }
+        else
+        {
+            racer->leftSpeed = 0;
+            racer->rightSpeed = 0;
+        }
+        
         /**********************
          * 
          * MIGHT NEED TO CHANGE MULTIPLICATION HERE DEPENDING ON NEURAL NET OUTPUT VALUE....
@@ -491,7 +558,10 @@ protected:
     ros::Publisher camera_pub;
     //publisher to colour camera
     ros::Publisher camera_pub_colour;
-    /*
+    //ros explore data pub
+    ros::Publisher explr_pub;
+       
+    
     //publisher to is_Rewarded (if rat gets reward)
     ros::Publisher reward_publish;
     //publisher to in_Blue_Place (if rat in assigned place)
@@ -499,9 +569,9 @@ protected:
     //publisher to in_Green_Place (if rat in assigned place)
     ros::Publisher placeG_publish;
     //publisher for is_Seen (if rat sees Green pellet)
-    ros::Publisher seenG_publish;
+    ros::Publisher distanceG_publish;
     //publisher for is_Seen (if rat sees Blue pellet)
-    ros::Publisher seenB_publish;
+    ros::Publisher distanceB_publish;
    
     ros::Publisher seenR_publish;
     //publisher for contactBLue
@@ -509,9 +579,10 @@ protected:
 
     ros::Publisher on_contact_green_publish;
     //subscriber for the motor control messages
-    */
+    
     ros::Subscriber sub;
     
+
 public:
     EnkiPlayground(World *world, QWidget *parent = 0):
 		EnkiWidget(world, parent)
@@ -538,17 +609,21 @@ public:
         
         camera_pub_colour = nh.advertise<sensor_msgs::Image>("mybot/colour_camera/image_raw", 1);
 
+        explr_pub = nh.advertise<geometry_msgs::Twist>("mybot/limbic", 1); //just used because its native and has multiple float fields, maybe find a better one
+       
+
+
         //Reversal publishers
-        /*
+        
         reward_publish = nh.advertise<std_msgs::Float32>("mybot/isRewarded",1);
         placeG_publish = nh.advertise<std_msgs::Float32>("mybot/inPlaceGreen",1);
         placeB_publish = nh.advertise<std_msgs::Float32>("mybot/inPlaceBlue",1);
-        seenG_publish = nh.advertise<enki_ros_pck::Sight>("mybot/seeGreen",1);
-        seenB_publish = nh.advertise<enki_ros_pck::Sight>("mybot/seeBlue",1);
-        seenR_publish = nh.advertise<enki_ros_pck::Sight>("mybot/seeReward",1);
+        distanceG_publish = nh.advertise<std_msgs::Float32>("mybot/distGreen",1);
+        distanceB_publish = nh.advertise<std_msgs::Float32>("mybot/distBlue",1);
+        //seenR_publish = nh.advertise<enki_ros_pck::Sight>("mybot/seeReward",1);
         on_contact_blue_publish = nh.advertise<std_msgs::Float32>("mybot/contactBlue", 1);
         on_contact_green_publish = nh.advertise<std_msgs::Float32>("mybot/contactGreen", 1);      
-        */
+        
 
         racer = new Racer(nInputs);
         racer->pos = Point(racerx, racery); // x and y of the start point
@@ -570,7 +645,7 @@ public:
         
         pelletL = new PhysicalObject();
        // green_pellet.name = new PhysicalObject();
-        pelletL->setCylindric(2,2,100);
+        pelletL->setCylindric(3,3,10000);
         //green_pellet.name->setColor(Enki::Color(1,0,0)); //Enki::Color(R,G,B) so (1,0,0) = true red = rgb8
         pelletL->setColor(Enki::Color(0,1,0)); //Enki::Color(R,G,B) so (1,0,0) = true red = rgb8
         //green_pellet.name->pos = Point(green_pellet.x_coord, green_pellet.y_coord);
@@ -580,7 +655,7 @@ public:
 
         pelletR = new PhysicalObject();
         //blue_pellet.name = new PhysicalObject();
-        pelletR->setCylindric(2,2,100);
+        pelletR->setCylindric(3,3,10000);
         //blue_pellet.name->setCylindric(2,2,100);
         pelletR->setColor(Enki::Color(0,0,1)); //Enki::Color(R,G,B) so (0,1,0) = true green = rgb8
         //blue_pellet.name->setColor(Enki::Color(0,0,1)); //Enki::Color(R,G,B) so (0,1,0) = true green = rgb8
@@ -666,6 +741,25 @@ virtual void sceneCompletedHook()
 	    }
 	    msg.data.resize(9*4*9);
    	    camera_pub_colour.publish(msg);
+        Limbic_system ls;
+        ls.doStep(reward,green_place,blue_place,contactGreen, contactBlue,green_distance,blue_distance,green_reward_distance,blue_reward_distance);
+        
+        explore_left =ls.getExploreLeft();
+	    explore_right =ls.getExploreRight(); 
+       
+        float Greensw=ls.getGreenOutput() * 2;
+		float Bluesw=ls.getBlueOutput() * 2;
+		//ROS_INFO("%f", Bluesw);
+
+        geometry_msgs::Twist limbic;
+        limbic.angular.x = explore_left;
+        limbic.angular.y = explore_right;
+        limbic.linear.x = Greensw;
+        limbic.linear.y = Bluesw;
+
+        
+        explr_pub.publish(limbic);       
+
 
         //make this a function
         // return pellet to start point in case of collision (shouldnt happen but sometimes does)
@@ -683,26 +777,40 @@ virtual void sceneCompletedHook()
             pelletR->pos = Point((pelletRx),(pelletRy));
         }
         
-        //---------------------------------REVERSAL DATA PUBLISHING------------------------------------------------
-        //name ros msgs
-        /*
-        std_msgs::Float32 reward; //bool message for if rat is at reward
-        std_msgs::Float32 placeG; // bool message is rat is in defined place
-        std_msgs::Float32 placeB;
-        std_msgs::Float32 on_contact_blue; //float message for if rat is touching blue landmark (0 or 1)
-        std_msgs::Float32 on_contact_green; //float message for if rat is touching green landmark (0 or 1)
-        enki_ros_pck::Sight seenG; //bool and distance message for if rat sees green pellet and how far it is from green pellet
-        enki_ros_pck::Sight seenB; //bool and distance message for if rat sees blue pellet and how far it is from blue pellet
-        enki_ros_pck::Sight seenR; //bool and distance message for if rat sees reward and how far it is from reward
-        */
+        
 
         //assign values to msgs
         //rewardBool(racer, pelletL, reward, maxx, maxy); // calls rewardBool function which checks if rat has received reward (located in ReversalSignals.h)
-        reward = rewardBool(racer, pelletR, maxx, maxy, BLUEPELLETX, BLUEPELLETY, 20);
+       
+        if(rewardcount >= rewards_before_switch)
+        {   
+            
+            if (rewardSet)
+            {
+                 rewardSet = 0;
+            }
+            else
+            {
+                rewardSet = 1;
+            }
+            
+            rewardcount = 0;
+        }
+        switch (rewardSet)
+        {
+        case 0: //Blue
+            reward = rewardBoolB(racer, pelletR, maxx, maxy, BLUEPELLETX, BLUEPELLETY, 35);
+            break;
+        case 1: //Green
+            reward = rewardBoolG(racer, pelletL, maxx, maxy, GREENPELLETX, GREENPELLETY, 35);
+            break;
+        }
+        //reward = rewardBool(racer, pelletR, maxx, maxy, BLUEPELLETX, BLUEPELLETY, 35);
         green_distance = getDistanceGreen(racer, pelletL, maxx, maxy); //calls function which checks distance from rat to reward, sets seen.distance. (located in ReversalSignals.h)
         blue_distance = getDistanceBlue(racer, pelletR, maxx, maxy);
-        green_reward_distance = getDistanceRewardGreen(racer, pelletL, rewardPelletx, rewardPellety, 20);
-        blue_reward_distance = getDistanceRewardBlue(racer, pelletR, rewardPelletx, rewardPellety, 20);
+        green_reward_distance = getDistanceRewardGreen(racer, pelletL, rewardPelletx, rewardPellety, 35);
+        blue_reward_distance = getDistanceRewardBlue(racer, pelletR, rewardPelletx, rewardPellety, 35);
+        
         contactBlue = on_contact_direction_blue(racer, pelletR);
         contactGreen = on_contact_direction_green(racer, pelletL);
 
@@ -710,8 +818,35 @@ virtual void sceneCompletedHook()
         //seenBool(seenG, msg, GREEN); // calls function which checks is rat can see reward, sets seen.sight. (located in ReversalSignals.h)
         //seenBool(seenB, msg, BLUE);
 
-        green_place = placeBoolGreen(racer, GREENPELLETX, GREENPELLETY, 20, maxx, maxy); // (msg, enki-racer, x coord of centre of place, y coord of centre of place, radius of place, max x coord of simulator, max y cord of simulator) call function which checks if rat is in defined place, sets reward.data. (located in ReversalSignals.h)
-        blue_place = placeBoolBlue(racer, BLUEPELLETX, BLUEPELLETY, 20, maxx, maxy);
+        green_place = placeBoolGreen(racer, GREENPELLETX, GREENPELLETY, 35, maxx, maxy); // (msg, enki-racer, x coord of centre of place, y coord of centre of place, radius of place, max x coord of simulator, max y cord of simulator) call function which checks if rat is in defined place, sets reward.data. (located in ReversalSignals.h)
+        blue_place = placeBoolBlue(racer, BLUEPELLETX, BLUEPELLETY, 35, maxx, maxy);
+       
+        //---------------------------------REVERSAL DATA PUBLISHING------------------------------------------------
+        //name ros msgs
+        
+        std_msgs::Float32 rewardSig;
+        rewardSig.data = reward; //bool message for if rat is at reward
+        std_msgs::Float32 placeG;
+        placeG.data = green_place; // bool message is rat is in defined place
+        std_msgs::Float32 placeB;
+        placeB.data = blue_place;
+        std_msgs::Float32 on_contact_blue_sig;
+        on_contact_blue_sig.data = contactBlue; //float message for if rat is touching blue landmark (0 or 1)
+        std_msgs::Float32 on_contact_green_sig;
+        on_contact_green_sig.data = contactGreen; //float message for if rat is touching green landmark (0 or 1)
+        
+        //enki_ros_pck::Sight seenG; //bool and distance message for if rat sees green pellet and how far it is from green pellet
+        std_msgs::Float32 distanceG; 
+        //seenG.sight = green_sight;
+        distanceG.data  = green_distance;
+        //enki_ros_pck::Sight seenB; //bool and distance message for if rat sees blue pellet and how far it is from blue pellet
+        std_msgs::Float32 distanceB;
+        //seenB.sight = blue_sight;
+        distanceB.data = blue_distance;
+        //seenB.distance = blue_distance;
+        enki_ros_pck::Sight seenR; //bool and distance message for if rat sees reward and how far it is from reward
+        //seenR.sight = add some logic for this
+       
        /*
            ROS_INFO("%s", "reward: ");
 	ROS_INFO("%f", reward);
@@ -741,21 +876,19 @@ virtual void sceneCompletedHook()
 	ROS_INFO("%f", contactGreen);
     */
     //Numbers not updating (make functions return) and only going once because whatever makes the function 'step' isnt running, so update that...
-        Limbic_system ls;
-        ls.doStep(reward,green_place,blue_place,contactGreen, contactBlue,green_distance,blue_distance,green_reward_distance,blue_reward_distance);
+        
 
-       
         //Publish msgs
-        /*
-        reward_publish.publish(reward); //publishes data about if rat can see reward
+        
+        reward_publish.publish(rewardSig); //publishes data about if rat can see reward
         placeG_publish.publish(placeG); //publishes data about if rat is in defined place
         placeB_publish.publish(placeB); //publishes data about if rat is in defined place
-        seenG_publish.publish(seenG); //publishes data about if rat can see reward and how far from reward it is.
-        seenB_publish.publish(seenB);
-        seenR_publish.publish(seenR);
-        on_contact_blue_publish.publish(on_contact_blue);
-        on_contact_green_publish.publish(on_contact_green);
-        */
+        distanceG_publish.publish(distanceG); //publishes data about if rat can see reward and how far from reward it is.
+        distanceB_publish.publish(distanceB);
+        //seenR_publish.publish(seenR);
+        on_contact_blue_publish.publish(on_contact_blue_sig);
+        on_contact_green_publish.publish(on_contact_green_sig);
+        
         ros::spinOnce();
 
         //----------------------------------------------------------------------------------------------------------
@@ -789,7 +922,7 @@ int main(int argc, char *argv[])
     //Creating combpath which directs to our texture file location
 	std::string pckpath = ros::package::getPath("enki_ros_pck"); //C++ string path to enki_ros_pck package folder
 	QString qtpckpath = QString::fromStdString(pckpath); //convert to QString
-	QString qtfile = QString().sprintf("/circles.png"); //convert /file_name.png to QString
+	QString qtfile = QString().sprintf("/ColourSwapPF.png"); //convert /file_name.png to QString
 	QString combpath = qtpckpath + qtfile; //combine both QStrings
     gt = QGLWidget::convertToGLFormat(QImage(combpath)); 
     if (gt.isNull()) {
@@ -807,6 +940,7 @@ int main(int argc, char *argv[])
     viewer.show();
 
     return app.exec();
+    return 0;
 }
 
 //dostep( rewardBool, placeBoolGreen, placeBoolBlue, on_contact_direction_green, on_contact_direction_blue, getDistanceGreen, getDistanceBlue, need visual_reward_gb )
