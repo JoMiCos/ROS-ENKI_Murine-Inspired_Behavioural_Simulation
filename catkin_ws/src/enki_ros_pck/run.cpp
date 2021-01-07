@@ -89,8 +89,8 @@ static bool rewardSet;
 static double	maxx = 250;
 static double	maxy = 250;
 static double   racerx = (maxx/2)+30;
-static double   racery = (maxy/2) +5;
-static uint8_t rewards_before_switch = 1;
+static double   racery = (maxy/2) -50;
+static uint8_t rewards_before_switch = 5;
 
 int countSteps=0;
 int countRuns=0;
@@ -103,7 +103,7 @@ static bool reward_flagG = 0;
 static bool reward_flagB = 0;
 static bool start_timer{0};
 static auto start = system_clock::now();
-static seconds delay(21);//21==0????
+static seconds delay(0);//21==0????
 uint8_t rewardcount{0};
 
 
@@ -252,10 +252,11 @@ float rewardBoolB(Enki::Racer* racer, Enki::PhysicalObject* pellet, double racer
             if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<14.0)
             {	//robot half length + food radius = 10+2 = 12
                 reward = 1; 
+                racer->pos = Point(155, 75);
                 pellet->setColor(Enki::Color(0,0,1));
-                racer->pos = Point(racerx, racery);
                 reward_flagB=0;
                 rewardcount++;
+                
                 
             }
             else
@@ -281,9 +282,9 @@ float rewardBoolG(Enki::Racer* racer, Enki::PhysicalObject* pellet, double racer
             //if (sqrt((racer->pos.x - _pellet.name->pos.x)*(racer->pos.x - _pellet.name->pos.x)+(racer->pos.y - _pellet.name->pos.y)*(racer->pos.y - _pellet.name->pos.y))<13.0)
             if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<14.0)
             {	//robot half length + food radius = 10+2 = 12
+                racer->pos = Point(155, 75);// racerx, racery - when nonmagic numbers used causes glitch where robot spawns in top right corner
                 reward = 1; 
                 pellet->setColor(Enki::Color(0,1,0));
-                racer->pos = Point(racerx, racery);
                 reward_flagG=0;
                 rewardcount++;
                 

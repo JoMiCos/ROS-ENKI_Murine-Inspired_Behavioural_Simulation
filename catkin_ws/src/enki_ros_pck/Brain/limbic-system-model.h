@@ -40,7 +40,7 @@ public:
 	
 	enum ExploreStates {EXPLORE_STRAIGHT, EXPLORE_LEFT, EXPLORE_RIGHT, EXPLORE_STOP, EXPLORE_NUM_ITEMS};
 
-	ExploreStates exploreState = EXPLORE_STRAIGHT;
+	//ExploreStates exploreState = EXPLORE_STRAIGHT;
 
 	// output to the motor system
 	// codes approach behaviour towards the light green object

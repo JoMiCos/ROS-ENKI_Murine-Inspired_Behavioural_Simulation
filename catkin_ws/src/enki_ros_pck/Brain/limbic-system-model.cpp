@@ -9,6 +9,9 @@ float DRN_SUPPRESSION = 0;
 float OFC_5HTR1_OFFSET = 0;
 float OFC_5HTR2_OFFSET = 0;
 float DRN_OFFSET = 0;
+static float rm = RAND_MAX;
+static int exploreState;
+
 
 // constructor
 Limbic_system::Limbic_system()
@@ -144,33 +147,38 @@ void Limbic_system::doStep(float _reward,
 	case EXPLORE_LEFT:
 		mPFC2CoreExploreLeft = 0.1;
 		mPFC2CoreExploreRight = 0;
-		if (((float)random()/((float)RAND_MAX))<0.03) {
-			exploreState = (ExploreStates)floor((float)random()/(float)RAND_MAX*EXPLORE_NUM_ITEMS);
+		if ((random()/(rm))<0.03) {
+			//printf("left\n");
+			exploreState = floor(4*(random()/rm));
 		}
 		//printf("left\n");
 		break;
 	case EXPLORE_RIGHT:
 		mPFC2CoreExploreLeft = 0;
 		mPFC2CoreExploreRight = 0.1;
-		if (((float)random()/((float)RAND_MAX))<0.03) {
-			exploreState = (ExploreStates)floor((float)random()/(float)RAND_MAX*EXPLORE_NUM_ITEMS);
+		if ((random()/(rm))<0.03) {
+			exploreState = floor(4*(random()/rm));
 		}
 		//printf("right\n");
 		break;
 	case EXPLORE_STOP:
 		mPFC2CoreExploreLeft = 0;
 		mPFC2CoreExploreRight = 0;
-		if (((float)random()/((float)RAND_MAX))<0.01) {
-			exploreState = (ExploreStates)floor((float)random()/(float)RAND_MAX*EXPLORE_NUM_ITEMS);
+		if ((random()/(rm))<0.01) {
+			exploreState = floor(4*(random()/rm));
 		}
+		//printf("stop\n");
 		break;
 	case EXPLORE_STRAIGHT:
 	default:
 		mPFC2CoreExploreLeft = 0.1;
 		mPFC2CoreExploreRight = 0.1;
-		if (((float)random()/((float)RAND_MAX))<0.05) {
-			exploreState = (ExploreStates)floor((float)random()/(float)RAND_MAX*EXPLORE_NUM_ITEMS);
+		if ((random()/(rm))<0.05) {
+			exploreState = floor(4*(random()/rm));
+			//printf("%d", exploreState);
+			//printf("\n");
 		}
+		//printf("straight\n");
 		break;
 	}
 
@@ -235,14 +243,14 @@ void Limbic_system::doStep(float _reward,
 		//printf("dir! mPFC_Green = %f\n",visual_direction_Green);
 	}
 
-	//logging();
+	logging();
 
 	step++;  
 
 }	
 
 
-/*
+
 
 void Limbic_system::logging() {
 	fprintf(flog,"%ld %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f "
@@ -280,8 +288,8 @@ void Limbic_system::logging() {
 		OFCNeuron->getWeight(0), // 30
 		OFCNeuron->getWeight(1), // 31
 		mPFCneuronGreen->getWeight(0), // 32
-		mPFCneuronBlue->gWeight(0) // 33
+		mPFCneuronBlue->getWeight(0) // 33
 		);
 	fflush(flog);
 }
-*/
+

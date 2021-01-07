@@ -254,38 +254,40 @@ void calculateMotorSpeedReward(geometry_msgs::Twist& msg){
 		double error = (reward_sensor_values[6]/255.0) + 2*(reward_sensor_values[7]/255.0) + 3*(reward_sensor_values[8]/255.0) - 3*(reward_sensor_values[0]/255.0) - 2*(reward_sensor_values[1]/255.0) - (reward_sensor_values[2]/255.0);
 		
 		msg.angular.z = -error*0.05; //if -ve turn left when see red, if +ve turn right when see red
+		msg.linear.y = 1;
 }
 
 void ratExplore(geometry_msgs::Twist& vel)
 {
 	
-	ROS_INFO("%s", "-------------");
+	//ROS_INFO("%s", "-------------");
 	//ROS_INFO("%f", explore_left);
 	//ROS_INFO("%f", explore_right);
 	//ROS_INFO("%f", Bluesw);
 	//ROS_INFO("%f", Greensw);
 	//ROS_INFO("%f", reward_sight);
-	ROS_INFO("%d", blue_sensor_values[0]);
-	ROS_INFO("%d", blue_sensor_values[1]);
-	ROS_INFO("%d", blue_sensor_values[2]);
-	ROS_INFO("%d", blue_sensor_values[3]);
-	ROS_INFO("%d", blue_sensor_values[4]);
-	ROS_INFO("%d", blue_sensor_values[5]);
-	ROS_INFO("%d", blue_sensor_values[6]);
-	ROS_INFO("%d", blue_sensor_values[7]);
-	ROS_INFO("%d", blue_sensor_values[8]);
+	//ROS_INFO("%d", blue_sensor_values[0]);
+	//ROS_INFO("%d", blue_sensor_values[1]);
+	//ROS_INFO("%d", blue_sensor_values[2]);
+	//ROS_INFO("%d", blue_sensor_values[3]);
+	//ROS_INFO("%d", blue_sensor_values[4]);
+	//ROS_INFO("%d", blue_sensor_values[5]);
+	//ROS_INFO("%d", blue_sensor_values[6]);
+	//ROS_INFO("%d", blue_sensor_values[7]);
+	//ROS_INFO("%d", blue_sensor_values[8]);
 
 	
 	if(sensor_values_stuck/255.0 > 0.9) 
-		{ // if it is almost white (0.0-1.0 is black-white)
-			vel.angular.z = 0.7;
-			vel.linear.y = 1;		//positive is clockwise
-		}
+	{ // if it is almost white (0.0-1.0 is black-white)
+			
+		vel.angular.z = 0.7;
+		vel.linear.y = 1;		
+	}
 
 	else if (green_sight == 0 && blue_sight == 0 && reward_sight ==0) //dont see landmark
 	{
 		//ROS_INFO("%s", "dont see anything");
-		vel.angular.z = 10*(explore_right-explore_left);//can make random amount of turn by multiplying both my rand.
+		vel.angular.z = 0.5*(explore_right-explore_left);//can make random amount of turn by multiplying both my rand.
 		
 		if (explore_left > 0 || explore_right >0)
 		{
@@ -433,7 +435,7 @@ int main(int argc, char **argv){
 			flag = false;
 			
 			int colour_seen=colourCheck();
-			//ROS_INFO("%d", colour_seen);
+			ROS_INFO("%d", colour_seen);
 			switch(colour_seen){
 			case 1: //green
 				green_sight=1;
@@ -450,7 +452,7 @@ int main(int argc, char **argv){
 				green_sight=0;
 				reward_sight=1;
 				break;	
-			case 0: //exlpore
+			case 0: //explore
 				blue_sight=0;
 				green_sight=0;
 				reward_sight=0;
