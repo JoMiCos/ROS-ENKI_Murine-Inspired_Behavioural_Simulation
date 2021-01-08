@@ -43,49 +43,50 @@ static float explore_right;
 static float Greensw;
 static float Bluesw;
 
+//static float explore_dist_green;
+//static float explore_dist_blue;
 static double rm = RAND_MAX;
 
 Limbic_system limbic_system;
 
-void rewardSignalCallback(const std_msgs::Float32::ConstPtr& msg)
+void rewardSignalCallback(const std_msgs::Float32::ConstPtr& msg) //Being Called
 {
 	float reward = msg->data;
 }
 
-void bluePlaceCallback(const std_msgs::Float32::ConstPtr& msg)
+void bluePlaceCallback(const std_msgs::Float32::ConstPtr& msg) //Being called
 {
 	float blue_placefield = msg->data;
 }
 
-void greenPlaceCallback(const std_msgs::Float32::ConstPtr& msg)
+void greenPlaceCallback(const std_msgs::Float32::ConstPtr& msg) //Being called
 {
 	float green_placefield = msg->data;
 }
 
-void seeBlueLandmarkCallback(const enki_ros_pck::Sight::ConstPtr& msg)
+void seeBlueLandmarkCallback(const std_msgs::Float32::ConstPtr& msg) //not
 {
-	float blue_sight = msg->sight;
-	float blue_distance = msg->distance; 
+	blue_distance = msg->data;
 }
 
-void seeGreenLandmarkCallback(const enki_ros_pck::Sight::ConstPtr& msg)
+void seeGreenLandmarkCallback(const std_msgs::Float32::ConstPtr& msg) //not
 {
-	float green_sight = msg->sight;
-	float green_distance = msg->distance; 
+	green_distance = msg->data; 
 }
 
-void rewardDistanceCallback(const enki_ros_pck::Sight::ConstPtr& msg)
-{
-	float reward_distance = msg->distance;
-	float reward_seen = msg->sight;
+void rewardDistanceCallback(const std_msgs::Float32::ConstPtr& msg) //not
+{	
+	
+	float reward_distance = msg->data;
+	
 }
 
-void onContactBlue(const std_msgs::Float32::ConstPtr& msg)
+void onContactBlue(const std_msgs::Float32::ConstPtr& msg) //being called
 {
 	float on_contact_blue = msg->data;
 }
 
-void onContactGreen(const std_msgs::Float32::ConstPtr& msg)
+void onContactGreen(const std_msgs::Float32::ConstPtr& msg) //being called
 {
 	float on_contact_green = msg->data;
 }
@@ -258,36 +259,23 @@ void calculateMotorSpeedReward(geometry_msgs::Twist& msg){
 }
 
 void ratExplore(geometry_msgs::Twist& vel)
-{
-	
-	//ROS_INFO("%s", "-------------");
+{	
 	//ROS_INFO("%f", explore_left);
 	//ROS_INFO("%f", explore_right);
-	//ROS_INFO("%f", Bluesw);
-	//ROS_INFO("%f", Greensw);
-	//ROS_INFO("%f", reward_sight);
-	//ROS_INFO("%d", blue_sensor_values[0]);
-	//ROS_INFO("%d", blue_sensor_values[1]);
-	//ROS_INFO("%d", blue_sensor_values[2]);
-	//ROS_INFO("%d", blue_sensor_values[3]);
-	//ROS_INFO("%d", blue_sensor_values[4]);
-	//ROS_INFO("%d", blue_sensor_values[5]);
-	//ROS_INFO("%d", blue_sensor_values[6]);
-	//ROS_INFO("%d", blue_sensor_values[7]);
-	//ROS_INFO("%d", blue_sensor_values[8]);
-
+	//ROS_INFO("%s", "---------------");
 	
 	if(sensor_values_stuck/255.0 > 0.9) 
 	{ // if it is almost white (0.0-1.0 is black-white)
 			
 		vel.angular.z = 0.7;
-		vel.linear.y = 1;		
+		vel.linear.y = 1;	
+		ROS_INFO("%s", "Wall");	
 	}
 
 	else if (green_sight == 0 && blue_sight == 0 && reward_sight ==0) //dont see landmark
-	{
-		//ROS_INFO("%s", "dont see anything");
-		vel.angular.z = 0.5*(explore_right-explore_left);//can make random amount of turn by multiplying both my rand.
+	{	
+		ROS_INFO("%s", "explore");
+		vel.angular.z = 0.75*(explore_right-explore_left);//can make random amount of turn by multiplying both my rand.
 		
 		if (explore_left > 0 || explore_right >0)
 		{
@@ -295,7 +283,7 @@ void ratExplore(geometry_msgs::Twist& vel)
 		}
 		else
 		{
-			vel.linear.y = 1; //should be 0? want to stop until reward appears
+			vel.linear.y = 0; //should be 0? want to stop until reward appears
 		}
 	}
 
@@ -311,37 +299,44 @@ void ratExplore(geometry_msgs::Twist& vel)
 		
 		if(reward_sight != 0)
 		{
-			//ROS_INFO("%s", "see reward");
+			ROS_INFO("%s", "reward");
 			calculateMotorSpeedReward(vel);
 			
 		}
-		else if (blue_sight != 0)
+		else if ((blue_sight != 0) && (blue_distance >0.75))
 		{	
+			ROS_INFO("%s", "blue");
 			if (Bluesw>=rand()/rm)
 			{
-				//ROS_INFO("%s", "see blue");
 				calculateMotorSpeedBlue(vel);	
 			}
-		
 			else
 			{
-				vel.angular.z = 10*(explore_right-explore_left);
+				vel.angular.z = 0.75*(explore_right-explore_left);
 				vel.linear.y = 1;
 			}
 			
 		}
-		else if(green_sight != 0)
+		else if((green_sight != 0) && (green_distance >0.75))
 		{
-			//ROS_INFO("%s", "see green");
+			
+			ROS_INFO("%s", "green");
 			if (Greensw>=rand()/rm)
 			{
 				calculateMotorSpeedGreen(vel);	
 			}
-		
 			else
 			{
-				vel.angular.z = 10*(explore_right-explore_left);
+				vel.angular.z = 0.75*(explore_right-explore_left);
 			}
+			
+			
+		}
+		else
+		{
+			ROS_INFO("%s", "else");
+			vel.angular.z = 0.75*(explore_right-explore_left);
+			vel.linear.y = 1;
 		}
 		
 	}
@@ -390,9 +385,9 @@ int main(int argc, char **argv){
 	eyes[26] = nh.subscribe("mybot/colour_camera/image_raw", 1, reward_callback8);
 	
 	limbic_signals[0] = nh.subscribe("mybot/isRewarded", 1, rewardSignalCallback);
-	limbic_signals[1] = nh.subscribe("mybot/seeBlue", 1, seeBlueLandmarkCallback);
-	limbic_signals[2] = nh.subscribe("mybot/seeGreen",1, seeGreenLandmarkCallback);
-	limbic_signals[3] = nh.subscribe("mybot/seeReward", 1, rewardDistanceCallback);
+	limbic_signals[1] = nh.subscribe("mybot/distBlue", 1, seeBlueLandmarkCallback);
+	limbic_signals[2] = nh.subscribe("mybot/distGreen",1, seeGreenLandmarkCallback);
+	limbic_signals[3] = nh.subscribe("mybot/seeReward", 1, rewardDistanceCallback); //fix this in run.cpp. need to make a green and a blue one.
 	limbic_signals[4] = nh.subscribe("mybot/inPlaceBlue",1, bluePlaceCallback);
 	limbic_signals[5] = nh.subscribe("mybot/inPlaceGreen", 1, greenPlaceCallback);
 	limbic_signals[6] = nh.subscribe("mybot/contactBlue", 1 , onContactBlue);
@@ -435,7 +430,7 @@ int main(int argc, char **argv){
 			flag = false;
 			
 			int colour_seen=colourCheck();
-			ROS_INFO("%d", colour_seen);
+			//ROS_INFO("%d", colour_seen);
 			switch(colour_seen){
 			case 1: //green
 				green_sight=1;

@@ -10,7 +10,7 @@ float OFC_5HTR1_OFFSET = 0;
 float OFC_5HTR2_OFFSET = 0;
 float DRN_OFFSET = 0;
 static float rm = RAND_MAX;
-static int exploreState;
+static int exploreState = 0;
 
 
 // constructor
@@ -151,7 +151,7 @@ void Limbic_system::doStep(float _reward,
 			//printf("left\n");
 			exploreState = floor(4*(random()/rm));
 		}
-		//printf("left\n");
+		printf("left\n");
 		break;
 	case EXPLORE_RIGHT:
 		mPFC2CoreExploreLeft = 0;
@@ -159,7 +159,7 @@ void Limbic_system::doStep(float _reward,
 		if ((random()/(rm))<0.03) {
 			exploreState = floor(4*(random()/rm));
 		}
-		//printf("right\n");
+		printf("right\n");
 		break;
 	case EXPLORE_STOP:
 		mPFC2CoreExploreLeft = 0;
@@ -167,7 +167,7 @@ void Limbic_system::doStep(float _reward,
 		if ((random()/(rm))<0.01) {
 			exploreState = floor(4*(random()/rm));
 		}
-		//printf("stop\n");
+		printf("stop\n");
 		break;
 	case EXPLORE_STRAIGHT:
 	default:
@@ -178,7 +178,7 @@ void Limbic_system::doStep(float _reward,
 			//printf("%d", exploreState);
 			//printf("\n");
 		}
-		//printf("straight\n");
+		printf("straight\n");
 		break;
 	}
 

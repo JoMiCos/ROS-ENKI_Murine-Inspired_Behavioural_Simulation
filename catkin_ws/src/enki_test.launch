@@ -11,10 +11,4 @@
 	 type="robot"
 	 output="screen" />
 
-	<node
-	 name="rqt_gui"
-	 pkg="rqt_gui"
-	 type="rqt_gui"
-	 output="screen" />
-	
 </launch>

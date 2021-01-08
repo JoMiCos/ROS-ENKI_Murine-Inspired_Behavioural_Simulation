@@ -497,8 +497,8 @@ private:
         //both will be 30 speed //used to multiply by 18
         if(linear>0)
         {
-        racer->leftSpeed = (angular_speed*50.0) + 60.0;
-        racer->rightSpeed = (angular_speed*(-50.0)) + 60.0;
+        racer->leftSpeed = (angular_speed*50.0) + 40.0;
+        racer->rightSpeed = (angular_speed*(-50.0)) + 40.0;
         }
         else
         {
