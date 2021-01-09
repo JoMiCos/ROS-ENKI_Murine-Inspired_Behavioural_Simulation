@@ -90,7 +90,7 @@ static double	maxx = 250;
 static double	maxy = 250;
 static double   racerx = (maxx/2)+30;
 static double   racery = (maxy/2) -50;
-static uint8_t rewards_before_switch = 1;
+static uint8_t rewards_before_switch = 3;
 
 int countSteps=0;
 int countRuns=0;
@@ -353,7 +353,7 @@ float getDistanceRewardGreen(Enki::Racer* racer, Enki::PhysicalObject* pellet, f
         if(normalised_distance > 1){normalised_distance=1.0;}
         if(normalised_distance < 0){normalised_distance=0.0;}
         green_reward_distance = normalised_distance;
-        ROS_INFO("%f", green_reward_distance);
+        //ROS_INFO("%f", green_reward_distance);
         green_reward_sight = 1;
     }
     else

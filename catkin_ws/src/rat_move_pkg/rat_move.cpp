@@ -266,11 +266,11 @@ void ratExplore(geometry_msgs::Twist& vel)
 {	
 	//ROS_INFO("%f", explore_left);
 	//ROS_INFO("%f", explore_right);
-	ROS_INFO("%s", "---------------");
+	//ROS_INFO("%s", "---------------");
 	//ROS_INFO("%f", blue_placefield);
 	//ROS_INFO("%f", green_placefield);
-	ROS_INFO("%f", Greensw);
-	ROS_INFO("%f", Bluesw);
+	//ROS_INFO("%f", Greensw);
+	//ROS_INFO("%f", Bluesw);
 
 
 	if(sensor_values_stuck/255.0 > 0.9) 
@@ -309,13 +309,15 @@ void ratExplore(geometry_msgs::Twist& vel)
 	else //see landmark
 	{
 		if (Greensw > 1) {
-			Greensw=1;
+			Greensw=0.5;
 		}
 		if (Bluesw > 1) {
 			Bluesw=1;
 		}
 		//green/blue output increases as tendency to move to that colour does, so code that...(up to 1)
-		
+		//ROS_INFO("%s", "---------------");
+		//ROS_INFO("%f", Greensw);
+		//ROS_INFO("%f", Bluesw);
 		if(reward_sight != 0)
 		{
 			//ROS_INFO("%s", "reward");
@@ -323,7 +325,7 @@ void ratExplore(geometry_msgs::Twist& vel)
 			calculateMotorSpeedReward(vel);
 			
 		}
-		else if ((blue_sight != 0) && (blue_distance >0.65))
+		else if ((blue_sight != 0)) //&& (blue_distance >0.65))
 		{	
 			
 			//ROS_INFO("%s", "blue");
@@ -339,7 +341,7 @@ void ratExplore(geometry_msgs::Twist& vel)
 			}
 			
 		}
-		else if((green_sight != 0) && (green_distance >0.65))
+		else if((green_sight != 0)) //&& (green_distance >0.65))
 		{
 			
 			//ROS_INFO("%s", "green");
