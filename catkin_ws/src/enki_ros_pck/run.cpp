@@ -90,7 +90,7 @@ static double	maxx = 250;
 static double	maxy = 250;
 static double   racerx = (maxx/2)+30;
 static double   racery = (maxy/2) -50;
-static uint8_t rewards_before_switch = 5;
+static uint8_t rewards_before_switch = 1;
 
 int countSteps=0;
 int countRuns=0;
@@ -243,38 +243,40 @@ void rewardDelayG(seconds Delay){
 
 float rewardBoolB(Enki::Racer* racer, Enki::PhysicalObject* pellet, double racerx, double racery, double circleCentreX, double circleCentreY, double circleRad) // (racer->pos, pellet->pos)
 {
-    if ((racer->pos.x >= (circleCentreX - circleRad)) && (racer->pos.x <= (circleCentreX + circleRad)) && (racer->pos.y <= (circleCentreY + circleRad)) && (racer->pos.y >= (circleCentreY - circleRad))){
+    if (blue_place > 0){ //MAKE SO THAT IT CHANGES BACK WHEN OUT OF PLACEFIELD
     rewardDelayB(delay);
         if (reward_flagB){
             //ROS_INFO("%s", "flag = true");
             pellet->setColor(Enki::Color(1,0,0));
             //if (sqrt((racer->pos.x - _pellet.name->pos.x)*(racer->pos.x - _pellet.name->pos.x)+(racer->pos.y - _pellet.name->pos.y)*(racer->pos.y - _pellet.name->pos.y))<13.0)
+            //if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<14.0)
             if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<14.0)
-            {	//robot half length + food radius = 10+2 = 12
+                {	//robot half Flength + food radius = 10+2 = 12
                 reward = 1; 
                 racer->pos = Point(155, 75);
                 pellet->setColor(Enki::Color(0,0,1));
                 reward_flagB=0;
-                rewardcount++;
-                
-                
+                rewardcount++;                
             }
             else
             {
                 reward = 0;
             }
         }
-        else
-        {
-            //ROS_INFO("%s", "flag = false");
-        }
     }
+    else
+    {
+        pellet->setColor(Enki::Color(0,0,1));
+        reward = 0;
+        //ROS_INFO("%s", "flag = false");
+    }
+    
     return reward;
 }
 
 float rewardBoolG(Enki::Racer* racer, Enki::PhysicalObject* pellet, double racerx, double racery, double circleCentreX, double circleCentreY, double circleRad) // (racer->pos, pellet->pos)
 {
-    if ((racer->pos.x >= (circleCentreX - circleRad)) && (racer->pos.x <= (circleCentreX + circleRad)) && (racer->pos.y <= (circleCentreY + circleRad)) && (racer->pos.y >= (circleCentreY - circleRad))){
+    if (green_place > 0){
     rewardDelayG(delay);
         if (reward_flagG){
             //ROS_INFO("%s", "flag = true");
@@ -293,11 +295,14 @@ float rewardBoolG(Enki::Racer* racer, Enki::PhysicalObject* pellet, double racer
             {
                 reward = 0;
             }
-        }
-        else
-        {
-            //ROS_INFO("%s", "flag = false");
-        }
+    
+        }    
+    }
+    else
+    {
+        pellet->setColor(Enki::Color(0,1,0));
+        reward = 0;
+        //ROS_INFO("%s", "flag = false");
     }
     return reward;
 }
@@ -346,7 +351,9 @@ float getDistanceRewardGreen(Enki::Racer* racer, Enki::PhysicalObject* pellet, f
         float max_distance = radius;
         float normalised_distance = (1-(direct_distance/radius));
         if(normalised_distance > 1){normalised_distance=1.0;}
+        if(normalised_distance < 0){normalised_distance=0.0;}
         green_reward_distance = normalised_distance;
+        ROS_INFO("%f", green_reward_distance);
         green_reward_sight = 1;
     }
     else
@@ -368,7 +375,9 @@ float getDistanceRewardBlue(Enki::Racer* racer, Enki::PhysicalObject* pellet, fl
         float max_distance = radius;
         float normalised_distance = (1-(direct_distance/radius));
         if(normalised_distance > 1){normalised_distance=1.0;}
+        if(normalised_distance < 0){normalised_distance=0.0;}
         blue_reward_distance = normalised_distance;
+        //ROS_INFO("%f", blue_reward_distance);
         blue_reward_sight = 1;
     }
     else
@@ -497,8 +506,8 @@ private:
         //both will be 30 speed //used to multiply by 18
         if(linear>0)
         {
-        racer->leftSpeed = (angular_speed*50.0) + 40.0;
-        racer->rightSpeed = (angular_speed*(-50.0)) + 40.0;
+        racer->leftSpeed = (angular_speed*50.0) + 60.0;
+        racer->rightSpeed = (angular_speed*(-50.0)) + 60.0;
         }
         else
         {
@@ -743,8 +752,10 @@ virtual void sceneCompletedHook()
 	    msg.data.resize(9*4*9);
    	    camera_pub_colour.publish(msg);
         Limbic_system ls;
+        //ROS_INFO("%f", blue_reward_distance);
         ls.doStep(reward,green_place,blue_place,contactGreen, contactBlue,green_distance,blue_distance,green_reward_distance,blue_reward_distance);
-        
+        //signal test: reward (y) green_place(y) blue_place(y) contactGreen(y) contactBlue(y) green_distance(y) blue_distance(y) green_reward_distance(y) blue_distance_reward(y)
+
         explore_left =ls.getExploreLeft();
 	    explore_right =ls.getExploreRight(); 
        
@@ -756,7 +767,7 @@ virtual void sceneCompletedHook()
         limbic.angular.x = explore_left;
         limbic.angular.y = explore_right;
         limbic.linear.x = Greensw;
-        limbic.linear.y = Bluesw;
+        limbic.linear.y = Bluesw; //these stop updating after reward... why?
 
         
         explr_pub.publish(limbic);       
@@ -794,7 +805,7 @@ virtual void sceneCompletedHook()
             {
                 rewardSet = 1;
             }
-            
+            ROS_INFO("%s", "--REWARD SWITCHING--");
             rewardcount = 0;
         }
         switch (rewardSet)

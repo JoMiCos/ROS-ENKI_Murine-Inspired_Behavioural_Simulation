@@ -151,7 +151,7 @@ void Limbic_system::doStep(float _reward,
 			//printf("left\n");
 			exploreState = floor(4*(random()/rm));
 		}
-		printf("left\n");
+		//printf("left\n");
 		break;
 	case EXPLORE_RIGHT:
 		mPFC2CoreExploreLeft = 0;
@@ -159,15 +159,15 @@ void Limbic_system::doStep(float _reward,
 		if ((random()/(rm))<0.03) {
 			exploreState = floor(4*(random()/rm));
 		}
-		printf("right\n");
+		//printf("right\n");
 		break;
 	case EXPLORE_STOP:
 		mPFC2CoreExploreLeft = 0;
 		mPFC2CoreExploreRight = 0;
-		if ((random()/(rm))<0.01) {
+		if ((random()/(rm))<0.1) {
 			exploreState = floor(4*(random()/rm));
 		}
-		printf("stop\n");
+		//printf("stop\n");
 		break;
 	case EXPLORE_STRAIGHT:
 	default:
@@ -178,7 +178,7 @@ void Limbic_system::doStep(float _reward,
 			//printf("%d", exploreState);
 			//printf("\n");
 		}
-		printf("straight\n");
+		//printf("straight\n");
 		break;
 	}
 
@@ -237,11 +237,11 @@ void Limbic_system::doStep(float _reward,
 	weightChange(core_weight_dg2dg, learning_rate_core * core_plasticity * mPFC_Blue);
 
 	// we assume that the Core performs lateral inhibtion to shut down exploration
-	if ((CoreGreenOut > 0.05)||(CoreBlueOut > 0.05)) {
-		mPFC2CoreExploreLeft = 0; // (float)random()/(float)RAND_MAX;
-		mPFC2CoreExploreRight = 0; //(float)random()/(float)RAND_MAX;
+		//if ((CoreGreenOut > 0.05)||(CoreBlueOut > 0.05)) {
+		//mPFC2CoreExploreLeft = 0; // (float)random()/(float)RAND_MAX;
+		//mPFC2CoreExploreRight = 0; //(float)random()/(float)RAND_MAX;
 		//printf("dir! mPFC_Green = %f\n",visual_direction_Green);
-	}
+	//}
 
 	logging();
 

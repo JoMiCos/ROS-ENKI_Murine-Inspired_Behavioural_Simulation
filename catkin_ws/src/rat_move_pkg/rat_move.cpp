@@ -49,44 +49,48 @@ static double rm = RAND_MAX;
 
 Limbic_system limbic_system;
 
-void rewardSignalCallback(const std_msgs::Float32::ConstPtr& msg) //Being Called
+void rewardSignalCallback(const std_msgs::Float32::ConstPtr& msg) //works
 {
 	float reward = msg->data;
 }
 
-void bluePlaceCallback(const std_msgs::Float32::ConstPtr& msg) //Being called
+void bluePlaceCallback(const std_msgs::Float32::ConstPtr& msg) //works
 {
-	float blue_placefield = msg->data;
+	blue_placefield = msg->data;
 }
 
-void greenPlaceCallback(const std_msgs::Float32::ConstPtr& msg) //Being called
+void greenPlaceCallback(const std_msgs::Float32::ConstPtr& msg) //works
 {
-	float green_placefield = msg->data;
+	green_placefield = msg->data;
+	
 }
 
-void seeBlueLandmarkCallback(const std_msgs::Float32::ConstPtr& msg) //not
+void seeBlueLandmarkCallback(const std_msgs::Float32::ConstPtr& msg) //works
 {
 	blue_distance = msg->data;
+	
 }
 
-void seeGreenLandmarkCallback(const std_msgs::Float32::ConstPtr& msg) //not
+void seeGreenLandmarkCallback(const std_msgs::Float32::ConstPtr& msg) //works
 {
 	green_distance = msg->data; 
+
 }
 
-void rewardDistanceCallback(const std_msgs::Float32::ConstPtr& msg) //not
+void rewardDistanceCallback(const std_msgs::Float32::ConstPtr& msg) //not functional. necesarry? 
 {	
 	
 	float reward_distance = msg->data;
 	
 }
 
-void onContactBlue(const std_msgs::Float32::ConstPtr& msg) //being called
+void onContactBlue(const std_msgs::Float32::ConstPtr& msg) //works
 {
 	float on_contact_blue = msg->data;
+	
 }
 
-void onContactGreen(const std_msgs::Float32::ConstPtr& msg) //being called
+void onContactGreen(const std_msgs::Float32::ConstPtr& msg) //works
 {
 	float on_contact_green = msg->data;
 }
@@ -136,7 +140,7 @@ void rewardCallback(const sensor_msgs::Image::ConstPtr& msg, int index){
 	}
 }
 
-void limbicCallback(const geometry_msgs::Twist limbic)
+void limbicCallback(const geometry_msgs::Twist limbic) //works
 {
 	explore_left = limbic.angular.x;
 	explore_right = limbic.angular.y;
@@ -262,19 +266,24 @@ void ratExplore(geometry_msgs::Twist& vel)
 {	
 	//ROS_INFO("%f", explore_left);
 	//ROS_INFO("%f", explore_right);
-	//ROS_INFO("%s", "---------------");
-	
+	ROS_INFO("%s", "---------------");
+	//ROS_INFO("%f", blue_placefield);
+	//ROS_INFO("%f", green_placefield);
+	ROS_INFO("%f", Greensw);
+	ROS_INFO("%f", Bluesw);
+
+
 	if(sensor_values_stuck/255.0 > 0.9) 
 	{ // if it is almost white (0.0-1.0 is black-white)
 			
 		vel.angular.z = 0.7;
 		vel.linear.y = 1;	
-		ROS_INFO("%s", "Wall");	
+		//ROS_INFO("%s", "Wall");	
 	}
 
 	else if (green_sight == 0 && blue_sight == 0 && reward_sight ==0) //dont see landmark
 	{	
-		ROS_INFO("%s", "explore");
+		//ROS_INFO("%s", "explore");
 		vel.angular.z = 0.75*(explore_right-explore_left);//can make random amount of turn by multiplying both my rand.
 		
 		if (explore_left > 0 || explore_right >0)
@@ -282,8 +291,18 @@ void ratExplore(geometry_msgs::Twist& vel)
 			vel.linear.y = 1;
 		}
 		else
-		{
-			vel.linear.y = 0; //should be 0? want to stop until reward appears
+		{	
+			if ((blue_placefield != 0) || (green_placefield != 0))
+			{
+				//vel.angular.z = -0.5;
+				vel.linear.y = 1;
+			}
+			else
+			{
+				//ROS_INFO("%s", "stopped");
+				vel.linear.y = 0; //should be 0? want to stop until reward appears
+			}
+			
 		}
 	}
 
@@ -299,15 +318,18 @@ void ratExplore(geometry_msgs::Twist& vel)
 		
 		if(reward_sight != 0)
 		{
-			ROS_INFO("%s", "reward");
+			//ROS_INFO("%s", "reward");
+			vel.linear.y=1;
 			calculateMotorSpeedReward(vel);
 			
 		}
-		else if ((blue_sight != 0) && (blue_distance >0.75))
+		else if ((blue_sight != 0) && (blue_distance >0.65))
 		{	
-			ROS_INFO("%s", "blue");
+			
+			//ROS_INFO("%s", "blue");
 			if (Bluesw>=rand()/rm)
 			{
+				vel.linear.y=1;
 				calculateMotorSpeedBlue(vel);	
 			}
 			else
@@ -317,16 +339,18 @@ void ratExplore(geometry_msgs::Twist& vel)
 			}
 			
 		}
-		else if((green_sight != 0) && (green_distance >0.75))
+		else if((green_sight != 0) && (green_distance >0.65))
 		{
 			
-			ROS_INFO("%s", "green");
+			//ROS_INFO("%s", "green");
 			if (Greensw>=rand()/rm)
 			{
+				vel.linear.y=1;
 				calculateMotorSpeedGreen(vel);	
 			}
 			else
 			{
+				vel.linear.y = 1;
 				vel.angular.z = 0.75*(explore_right-explore_left);
 			}
 			
@@ -334,7 +358,7 @@ void ratExplore(geometry_msgs::Twist& vel)
 		}
 		else
 		{
-			ROS_INFO("%s", "else");
+			//ROS_INFO("%s", "else");
 			vel.angular.z = 0.75*(explore_right-explore_left);
 			vel.linear.y = 1;
 		}
