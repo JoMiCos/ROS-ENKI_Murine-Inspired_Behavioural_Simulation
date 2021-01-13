@@ -258,8 +258,8 @@ void Limbic_system::doStep(uint32_t _step, float _reward,
 		//printf("dir! mPFC_Green = %f\n",visual_direction_Green);
 	//}
 	//printf("%d", step);
-	printf("%f", mPFCneuronGreen->getWeight(0));
-	printf("%s", "\n");
+	//printf("%f", mPFCneuronGreen->getWeight(0));
+	//printf("%s", "\n");
 	logging();
 
 	//step++;  

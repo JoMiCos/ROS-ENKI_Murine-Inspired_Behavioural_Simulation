@@ -91,7 +91,7 @@ static double	maxx = 250;
 static double	maxy = 250;
 static double   racerx = (maxx/2)+30;
 static double   racery = (maxy/2) -50;
-static uint8_t rewards_before_switch = 1;
+
 
 int countSteps=0;
 int countRuns=0;
@@ -106,7 +106,11 @@ static bool start_timer{0};
 static auto start = system_clock::now();
 static seconds delay(0);//21==0????
 uint8_t rewardcount{0};
-
+uint8_t toggle_n=1;
+static int switch_toggle = STEPS_SWITCH; //starts reversal after steps_before_switch number of time steps (30Hz)
+//static int switch_toggle = REWARDS_SWITCH; //starts reversal after rewards_before_switch number of correct choices
+static uint8_t rewards_before_switch = 1; 
+static uint32_t steps_before_switch = 900; //30 steps per second
 
 //needs if in circle - change this to colour based on camera
 /*
@@ -791,24 +795,50 @@ virtual void sceneCompletedHook()
         }
         
         
-
+         
         //assign values to msgs
         //rewardBool(racer, pelletL, reward, maxx, maxy); // calls rewardBool function which checks if rat has received reward (located in ReversalSignals.h)
+        
+        switch (switch_toggle)
+        {
        
-        if(rewardcount >= rewards_before_switch)
-        {   
+        case 1: //timesteps
             
-            if (rewardSet)
+            if((steps_before_switch*toggle_n) == step)
             {
-                 rewardSet = 0;
+              if (rewardSet)
+                {
+                    rewardSet = 0;
+                }
+                else
+                {
+                    rewardSet = 1;
+                }
+                ROS_INFO("%s", "--REWARD SWITCHING--");
+                toggle_n++;  
+                racer->pos.x =racerx;
+                racer->pos.y =racery;
             }
-            else
-            {
-                rewardSet = 1;
+            break;
+        case 0: //correct choices
+        default:
+            if(rewardcount >= rewards_before_switch)
+            {   
+            
+                if (rewardSet)
+                {
+                    rewardSet = 0;
+                }
+                else
+                {
+                    rewardSet = 1;
+                }
+                ROS_INFO("%s", "--REWARD SWITCHING--");
+                rewardcount = 0;
             }
-            ROS_INFO("%s", "--REWARD SWITCHING--");
-            rewardcount = 0;
+            break;
         }
+        
         switch (rewardSet)
         {
         case 0: //Blue

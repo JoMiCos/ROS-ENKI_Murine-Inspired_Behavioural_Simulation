@@ -61,10 +61,15 @@
 #define NETWORKGAIN 10
 #define PREDGAIN 100
 
+// Pellet positions
 #define GREENPELLETX 60 //max*9/50 maxx=250
 #define GREENPELLETY 185 //max*4/5 -20 
 
 #define BLUEPELLETX 190
 #define BLUEPELLETY 185
+
+//Reward switch mode
+#define STEPS_SWITCH 1
+#define REWARDS_SWITCH 0
 
 
