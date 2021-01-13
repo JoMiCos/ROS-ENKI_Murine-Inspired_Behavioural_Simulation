@@ -1,4 +1,4 @@
-![Alt text](https://github.com/Lilypads/AI-Line-Follower/blob/master/SimInAction.png)
+![Alt text](https://github.com/JoMiCos/ROS-ENKI_Rat_Behavioural_Sim/blob/master/SimInAction.png)
 
 
 # ROS/ENKI Robot Simulation
@@ -117,7 +117,7 @@ rosrun rat_move_pkg rat_move
 ### To access the log file of output data
 
 Make hidden folders visible within your Home directory (can be done by pressing ctrl+h in Ubuntu)
-Open the __.ros__ folder which should become visible
+Open the __.ros__ folder which should become visible.
 log data can be found in limbic-log.dat
 
 
