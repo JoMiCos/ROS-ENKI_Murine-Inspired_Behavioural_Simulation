@@ -11,12 +11,26 @@ float OFC_5HTR2_OFFSET = 0;
 float DRN_OFFSET = 0;
 static float rm = RAND_MAX;
 static int exploreState = 0;
+static bool limbic_count{0};
+//static int step;
 
 
 // constructor
 Limbic_system::Limbic_system()
-{
-	flog = fopen("log.dat","wt");
+{	
+	switch (limbic_count)
+	{
+	case 0:
+		flog = fopen("limbic-log.dat","w");
+		limbic_count = 1;
+		break;
+	
+	default:
+		flog = fopen("limbic-log.dat","a");
+		break;
+	}
+	
+	
 
 	// filter which creates a default behaviour when touching the landmarks
 	on_contact_direction_Green_filter = new SecondOrderLowpassFilter(0.1);
@@ -52,7 +66,7 @@ Limbic_system::Limbic_system()
     mPFCneuronBlue->addInput(visual_reward_Blue,w);	 
 		
 	// input step number
-	step = 0;
+	//step = 0;
 };
 
 
@@ -87,7 +101,7 @@ void Limbic_system::weightChange(float &w, float delta) {
 //   the landmarks
 // - mPFC2CoreExploreLeft and - mPFC2CoreExploreRight to generate exploration behaviour
 //   that is inhibited with other activities.
-void Limbic_system::doStep(float _reward,
+void Limbic_system::doStep(uint32_t _step, float _reward,
 		float _placefieldGreen,
 		float _placefieldBlue,
 		float _on_contact_direction_Green,
@@ -97,7 +111,7 @@ void Limbic_system::doStep(float _reward,
 		float _visual_reward_Green,
 		float _visual_reward_Blue ) {
 
-	
+	step = _step;
 	reward = reward_filter->filter(_reward);
 	placefieldGreen = placefield_Green_filter->filter(_placefieldGreen);
 	placefieldBlue = placefield_Blue_filter->filter(_placefieldBlue);
@@ -108,6 +122,7 @@ void Limbic_system::doStep(float _reward,
 	visual_reward_Green = _visual_reward_Green;
 	visual_reward_Blue = _visual_reward_Blue;
 	//fprintf(stderr,"%f,%f\n",_visual_reward_Green,_visual_reward_Blue);
+
 
 	visual_direction_Green_trace = visual_direction_Green_mPFC_filter->filter(visual_direction_Green);
 	visual_direction_Blue_trace = visual_direction_Blue_mPFC_filter->filter(visual_direction_Blue);
@@ -242,10 +257,12 @@ void Limbic_system::doStep(float _reward,
 		//mPFC2CoreExploreRight = 0; //(float)random()/(float)RAND_MAX;
 		//printf("dir! mPFC_Green = %f\n",visual_direction_Green);
 	//}
-
+	//printf("%d", step);
+	printf("%f", mPFCneuronGreen->getWeight(0));
+	printf("%s", "\n");
 	logging();
 
-	step++;  
+	//step++;  
 
 }	
 
@@ -253,7 +270,7 @@ void Limbic_system::doStep(float _reward,
 
 
 void Limbic_system::logging() {
-	fprintf(flog,"%ld %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f "
+	fprintf(flog,"%d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f "
 		"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
 		step, //0
 		reward, //1

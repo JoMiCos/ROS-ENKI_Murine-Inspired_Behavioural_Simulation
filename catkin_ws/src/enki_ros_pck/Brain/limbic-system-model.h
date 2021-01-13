@@ -27,7 +27,7 @@ public:
 	// Blue objects. There is a reflex input on contact
 	// and a distance signal from the "eyes" of the agent seeing the
 	// light or dark green object.
-	void doStep(float _reward,
+	void doStep(uint32_t _step, float _reward,
 		    float _placefield_Green,
 		    float _placefield_Blue,
 		    float _on_contact_direction_Green,
@@ -61,7 +61,7 @@ public:
 
 private:
 	// simulation step counter
-	long int step;
+	uint32_t step;
 
 	// shunting inhibition is implemented as:
 	// neuronal_activity / ( 1 + inhibition * shunting_inhibition_factor )

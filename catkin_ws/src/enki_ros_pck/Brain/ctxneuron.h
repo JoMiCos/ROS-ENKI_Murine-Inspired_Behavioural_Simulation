@@ -34,7 +34,7 @@ public:
 
 private:
 	float output;
-	float output2;
+	//float output2;
 	static const int maxInputs = 10;
 	float* inputs[maxInputs];
 	float weights[maxInputs];

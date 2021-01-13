@@ -85,12 +85,13 @@ static float blue_place;
 static float explore_left;
 static float explore_right;
 static bool rewardSet;
+uint32_t step=0;
 
 static double	maxx = 250;
 static double	maxy = 250;
 static double   racerx = (maxx/2)+30;
 static double   racery = (maxy/2) -50;
-static uint8_t rewards_before_switch = 3;
+static uint8_t rewards_before_switch = 1;
 
 int countSteps=0;
 int countRuns=0;
@@ -252,8 +253,8 @@ float rewardBoolB(Enki::Racer* racer, Enki::PhysicalObject* pellet, double racer
             //if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<14.0)
             if (sqrt((racer->pos.x - pellet->pos.x)*(racer->pos.x - pellet->pos.x)+(racer->pos.y - pellet->pos.y)*(racer->pos.y - pellet->pos.y))<14.0)
                 {	//robot half Flength + food radius = 10+2 = 12
-                reward = 1; 
                 racer->pos = Point(155, 75);
+                reward = 1; 
                 pellet->setColor(Enki::Color(0,0,1));
                 reward_flagB=0;
                 rewardcount++;                
@@ -385,7 +386,8 @@ float getDistanceRewardBlue(Enki::Racer* racer, Enki::PhysicalObject* pellet, fl
         blue_reward_distance = 0;
         blue_reward_sight = 0;
     }
-    return blue_reward_distance;
+//ROS_INFO("%f", blue_reward_distance);
+return blue_reward_distance;
 }   
 
 float seenBoolBlue(sensor_msgs::Image msg){
@@ -548,13 +550,11 @@ protected:
     blue_pellet.colour = BLUE;
     */
 
-    double pelletLx = GREENPELLETX; //set in parameters.h
-    double pelletLy = GREENPELLETY;  
-    double pelletRx = BLUEPELLETX;
-    double pelletRy = BLUEPELLETY;
-    double rewardPelletx = BLUEPELLETX;
-    double rewardPellety = BLUEPELLETY; //going to need to write a function that flips which one is reward after certain number of completions.
-
+    double pelletGx = GREENPELLETX; //set in parameters.h
+    double pelletGy = GREENPELLETY;  
+    double pelletBx = BLUEPELLETX;
+    double pelletBy = BLUEPELLETY;
+   
     FILE* errorlog = NULL;
     FILE* fcoord = NULL;
     FILE* fspeed = NULL;
@@ -659,7 +659,7 @@ public:
         //green_pellet.name->setColor(Enki::Color(1,0,0)); //Enki::Color(R,G,B) so (1,0,0) = true red = rgb8
         pelletL->setColor(Enki::Color(0,1,0)); //Enki::Color(R,G,B) so (1,0,0) = true red = rgb8
         //green_pellet.name->pos = Point(green_pellet.x_coord, green_pellet.y_coord);
-        pelletL->pos = Point(pelletLx,(pelletLy));
+        pelletL->pos = Point(pelletGx,(pelletGy));
         //world->addObject(green_pellet.name);
         world->addObject(pelletL);
 
@@ -667,9 +667,9 @@ public:
         //blue_pellet.name = new PhysicalObject();
         pelletR->setCylindric(3,3,10000);
         //blue_pellet.name->setCylindric(2,2,100);
-        pelletR->setColor(Enki::Color(0,0,1)); //Enki::Color(R,G,B) so (0,1,0) = true green = rgb8
+        pelletR->setColor(Enki::Color(0,0,1)); //Enki::Color(R,G,B) so (0,0,1) = true blue = rgb8
         //blue_pellet.name->setColor(Enki::Color(0,0,1)); //Enki::Color(R,G,B) so (0,1,0) = true green = rgb8
-        pelletR->pos = Point(pelletRx,(pelletRy));
+        pelletR->pos = Point(pelletBx,(pelletBy));
         //blue_pellet.name->pos = Point(blue_pellet.x_coord,(blue_pellet.y_coord));
         world->addObject(pelletR);
         //world->addObject(blue_pellet.name);
@@ -753,7 +753,8 @@ virtual void sceneCompletedHook()
    	    camera_pub_colour.publish(msg);
         Limbic_system ls;
         //ROS_INFO("%f", blue_reward_distance);
-        ls.doStep(reward,green_place,blue_place,contactGreen, contactBlue,green_distance,blue_distance,green_reward_distance,blue_reward_distance);
+        ls.doStep(step, reward,green_place,blue_place,contactGreen, contactBlue,green_distance,blue_distance,green_reward_distance,blue_reward_distance);
+        step++;
         //signal test: reward (y) green_place(y) blue_place(y) contactGreen(y) contactBlue(y) green_distance(y) blue_distance(y) green_reward_distance(y) blue_distance_reward(y)
 
         explore_left =ls.getExploreLeft();
@@ -779,14 +780,14 @@ virtual void sceneCompletedHook()
         {
             pelletL->speed.x=0;
             pelletL->speed.y=0;
-            pelletL->pos = Point((pelletLx),(pelletLy));
+            pelletL->pos = Point((pelletGx),(pelletGy));
         }
 
         if ( pelletR->speed.x != 0)
         {
             pelletR->speed.x=0;
             pelletR->speed.y=0;
-            pelletR->pos = Point((pelletRx),(pelletRy));
+            pelletR->pos = Point((pelletBx),(pelletBy));
         }
         
         
@@ -820,8 +821,8 @@ virtual void sceneCompletedHook()
         //reward = rewardBool(racer, pelletR, maxx, maxy, BLUEPELLETX, BLUEPELLETY, 35);
         green_distance = getDistanceGreen(racer, pelletL, maxx, maxy); //calls function which checks distance from rat to reward, sets seen.distance. (located in ReversalSignals.h)
         blue_distance = getDistanceBlue(racer, pelletR, maxx, maxy);
-        green_reward_distance = getDistanceRewardGreen(racer, pelletL, rewardPelletx, rewardPellety, 35);
-        blue_reward_distance = getDistanceRewardBlue(racer, pelletR, rewardPelletx, rewardPellety, 35);
+        green_reward_distance = getDistanceRewardGreen(racer, pelletL, pelletGx, pelletGy, 35);
+        blue_reward_distance = getDistanceRewardBlue(racer, pelletR, pelletBx, pelletBy, 35);
         
         contactBlue = on_contact_direction_blue(racer, pelletR);
         contactGreen = on_contact_direction_green(racer, pelletL);
@@ -919,7 +920,7 @@ virtual void sceneCompletedHook()
 #endif
 
         countSteps ++;
-        if (countSteps == STEPSCOUNT){
+        if (countSteps == STEPSCOUNT){ //sets maximum number of steps
             qApp->quit();
         }
 

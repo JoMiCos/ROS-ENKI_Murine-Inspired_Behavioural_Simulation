@@ -1,5 +1,5 @@
 #include "ctxneuron.h"
-
+static float output2;
 
 CtxNeuron::CtxNeuron(float _learningRateLTP, float _learningRateLTD, float _tLTD) : 
 	learningRateLTP(_learningRateLTP),
@@ -21,7 +21,9 @@ float CtxNeuron::doStep(float nonPlasticInput, float serot) {
 	if (serot < 0) serot = 0;
 	output = ofc5HTreceptors(output,serot,serot*2);
 		
-	float dOutput = output - output2;
+	float dOutput = output - output2; //output2 not being remembered
+	//printf("%f",output2);
+	//printf("%s", "\n");
 	if (dOutput < 0) dOutput = 0;
 
 	float slowCa = slowCaDetector->filter(output);
