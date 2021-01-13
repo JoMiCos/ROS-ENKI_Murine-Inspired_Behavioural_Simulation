@@ -1,23 +1,18 @@
-![Alt text](https://github.com/Lilypads/AI-Line-Follower/blob/master/line%20follower.png)
-![Alt text](https://github.com/Lilypads/AI-Line-Follower/blob/master/braitenberg.png)
+![Alt text](https://github.com/Lilypads/AI-Line-Follower/blob/master/SimInAction.png)
+
 
 # ROS/ENKI Robot Simulation
 
-This repository provides ROS (Robot Operating System) based robot simulation packages using Enki Library. Together provided custom rqt plugins can be used for viewing and testing neural network implementations for the robots.
+This repository provides a 2D behavioural simulator, constructed by combining a ROS-ENKI simulator (retrieved from https:://github.com/Lilypads/ROS-ENKI_robot_simulation) and a limbic-system computational model (retrieved from https://github.com/berndporr/reversal-5ht). It currently runs a reversal learning experiment but aims to be adaptable.
 
 ## Content
 * __catkin_ws:__ line following robot simulator using Enki library catkin workspace directory
-  * __enki_braitenberg.launch:__ launch file for running many nodes at once, Braitenberg example
-  * __enki_line_follow.launch:__ launch file for running many nodes at once, Line Following example
+  * __rat_reversal.launch:__ launch file to run nodes involved with reversal learning experiment
   * __src:__ directory containing different nodes
-     * __enki_btb_react_control:__ subscribe to camera view, publish robot velocity, Braitenberg example
-     * __enki_line_react_control:__ subscribe to camera view, publish robot velocity, Line Following example
-     * __enki_ros_btb:__ enki environment and robot simulation, Braitenberg example
-     * __enki_ros_pck:__ enki environment and robot simulation, Line Following example
-     * __rqt_line_sensor_control:__ custom rqt from __Design Special Topic 5__
-     * __rqt_line_sensor_view:__ custom rqt from __Design Special Topic 5__
-     * __rqt_neural_net_control:__ custom rqt from __Design Special Topic 5__
-     * __rqt_neural_network_diagnostics:__ custom rqt from __Design Special Topic 5__
+  * __rat_move_pkg:__ visual signals read and motor signals produced and published to ROS topic 
+  * __enki_ros_pck:__ enki environment and robot simulation
+   * __Brain:__ limbic-system simulation files from __reversal-5ht__
+     
 
 ## Prerequisites
 
@@ -55,10 +50,6 @@ The following method is specific for Ubuntu18.04(Bionic) platform.
         sudo rosdep init
         rosdep update
         
-### Install qt5
-```
-sudo apt-get install qt5-default
-```
 
 ### Install Enki Library
 
@@ -95,17 +86,12 @@ Change directory to the workspace directory:
 cd ROS-ENKI_robot_simulation/catkin_ws
 ```
 
-### Method1: Roslaunch
+### Method1: Roslaunch (recommended) 
 
-For Line Following example,
+To launch rat_reversal nodes from catkin_ws:
 ```
 source devel/setup.bash
-roslaunch enki_line_follow.launch
-```
-For Braitenberg example,
-```
-source devel/setup.bash
-roslaunch enki_braitenberg.launch
+roslaunch src/rat_reversal.launch
 ```
 
 ### Method2: Manually run roscore and rosrun each node on seperate terminals
@@ -115,52 +101,23 @@ Run roscore on one terminal:
 roscore
 ```
 
-__2.1 Line Following Example__
-
 Run the enki simulation environment on the second terminal:
 ```
 source devel/setup.bash
 rosrun enki_ros_pck robot
 ```
 
-Run the line react control node on the third terminal:
+Run the rat_move node on the third terminal:
 ```
 source devel/setup.bash
-rosrun enki_line_react_control line_react_control_node
-```
-
-__2.2 Braitenberg Example__
-
-Run the enki simulation environment on the second terminal:
-```
-source devel/setup.bash
-rosrun enki_ros_btb enki_ros_btb_node
-```
-
-Run the btb react control node on the third terminal:
-```
-source devel/setup.bash
-rosrun enki_btb_react_control enki_btb_react_control_node
+rosrun rat_move_pkg rat_move
 ```
 
 
-Run rqt on the forth terminal:
-```
-source devel/setup.bash
-rqt --force-discover
-```
+### To access the log file of output data
 
-Select plugins: __Plugins > Design Special Topic 5__
+Make hidden folders visible within your Home directory (can be done by pressing ctrl+h in Ubuntu)
+Open the __.ros__ folder which should become visible
+log data can be found in limbic-log.dat
 
-### To check which node is currently running
 
-On another terminal:
-```
-rosnode list
-```
-### To view communication between nodes using rqt_graph
-
-On another terminal:
-```
-rosrun rqt_graph rqt_graph
-```
