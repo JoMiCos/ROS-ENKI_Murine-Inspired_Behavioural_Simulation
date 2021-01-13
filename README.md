@@ -3,7 +3,7 @@
 
 # ROS/ENKI Rat Behavioural Simulation
 
-This repository provides a 2D behavioural simulator, constructed by combining a ROS-ENKI simulator (retrieved from https:://github.com/Lilypads/ROS-ENKI_robot_simulation) and a limbic-system computational model (retrieved from https://github.com/berndporr/reversal-5ht). It currently runs a reversal learning experiment but aims to be adaptable.
+This repository provides a 2D behavioural simulator, constructed by combining a ROS-ENKI simulator (retrieved from https://github.com/Lilypads/ROS-ENKI_robot_simulation) and a limbic-system computational model (retrieved from https://github.com/berndporr/reversal-5ht). It currently runs a reversal learning experiment but aims to be adaptable.
 
 ## Content
 * __catkin_ws:__ line following robot simulator using Enki library catkin workspace directory
