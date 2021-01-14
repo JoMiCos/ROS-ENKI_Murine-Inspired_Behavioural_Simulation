@@ -113,6 +113,13 @@ void Limbic_system::doStep(uint32_t _step, float _reward,
 
 	step = _step;
 	reward = reward_filter->filter(_reward);
+	if (reward > 0)
+	{
+		printf("%f", _reward);
+		printf("%s", "\n");
+		printf("%f", reward);
+		printf("%s", "\n");
+	}
 	placefieldGreen = placefield_Green_filter->filter(_placefieldGreen);
 	placefieldBlue = placefield_Blue_filter->filter(_placefieldBlue);
 	on_contact_direction_Green = _on_contact_direction_Green;

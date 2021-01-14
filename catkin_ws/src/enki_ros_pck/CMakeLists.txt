@@ -40,7 +40,7 @@ set(enki_LIBRARY /usr/local/lib/libenki.a)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt5 COMPONENTS OpenGL REQUIRED)
 
-set(SOURCES run.cpp Racer.cpp bandpass.cpp ReversalSignals.cpp Brain/limbic-system-model.cpp Brain/filter.cpp Brain/ctxneuron.cpp)
+set(SOURCES run.cpp Racer.cpp bandpass.cpp Brain/limbic-system-model.cpp Brain/filter.cpp Brain/ctxneuron.cpp)
 
 include_directories(/usr/local/include/enki)
 
