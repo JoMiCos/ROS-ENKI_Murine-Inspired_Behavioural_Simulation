@@ -37,10 +37,9 @@
 #include "ros/ros.h" //these have to go first for some reason...
 #include "sensor_msgs/Image.h"
 #include "geometry_msgs/Twist.h"
-#include "std_msgs/Bool.h"
 #include "std_msgs/Float32.h"
 #include <ros/package.h>
-#include "enki_ros_pck/Sight.h"
+
 
 #include <Enki.h>
 #include <QApplication>
@@ -388,22 +387,24 @@ protected:
     ros::Publisher explr_pub;
        
     
-    //publisher to is_Rewarded (if rat gets reward)
-    ros::Publisher reward_publish;
     //publisher to placeB (if rat in blue placefield)
     ros::Publisher placeB_publish;
     //publisher to placeG (if rat in green placefield)
     ros::Publisher placeG_publish;
-    //publisher to distG (distance from Green pellet)
-    ros::Publisher distanceG_publish;
-    //publisher to distB (distance from Blue pellet)
-    ros::Publisher distanceB_publish;
-    //publisher for contactBLue
-    ros::Publisher on_contact_blue_publish;
 
-    ros::Publisher on_contact_green_publish;
+    //=== NOT CURRENTLY IN USE BY RAT_MOVE.CPP ===
+    //publisher to is_Rewarded (if rat gets reward)
+    //ros::Publisher reward_publish;
+    //publisher to distG (distance from Green pellet)
+    //ros::Publisher distanceG_publish;
+    //publisher to distB (distance from Blue pellet)
+    //ros::Publisher distanceB_publish;
+    //publisher for contactBLue
+    //ros::Publisher on_contact_blue_publish;
+    //ros::Publisher on_contact_green_publish;
     //subscriber for the motor control messages
     
+    //ROS SUBSCRIBER SETUP
     ros::Subscriber sub;
     
 
@@ -411,19 +412,11 @@ public:
     EnkiPlayground(World *world, QWidget *parent = 0):
 		EnkiWidget(world, parent)
 	{
-
-        //N.B. all these use same topic names as gazebo
-        line_sensor_pub[0] = nh.advertise<sensor_msgs::Image>("mybot/left_sensor4/image_raw",1);
-        line_sensor_pub[1] = nh.advertise<sensor_msgs::Image>("mybot/left_sensor3/image_raw",1);
-        line_sensor_pub[2] = nh.advertise<sensor_msgs::Image>("mybot/left_sensor2/image_raw",1);
-        line_sensor_pub[3] = nh.advertise<sensor_msgs::Image>("mybot/left_sensor1/image_raw",1);
-        line_sensor_pub[4] = nh.advertise<sensor_msgs::Image>("mybot/right_sensor1/image_raw",1);
-        line_sensor_pub[5] = nh.advertise<sensor_msgs::Image>("mybot/right_sensor2/image_raw",1);
-        line_sensor_pub[6] = nh.advertise<sensor_msgs::Image>("mybot/right_sensor3/image_raw",1);
-        line_sensor_pub[7] = nh.advertise<sensor_msgs::Image>("mybot/right_sensor4/image_raw",1);
-
         camera_pub = nh.advertise<sensor_msgs::Image>("mybot/camera1/image_raw", 1);
-        
+        camera_pub_colour = nh.advertise<sensor_msgs::Image>("mybot/colour_camera/image_raw", 1);
+        explr_pub = nh.advertise<geometry_msgs::Twist>("mybot/limbic", 1); //just used because its native and has multiple float fields, maybe find a better one
+       
+
         sub = nh.subscribe("mybot/cmd_vel", 1, &EnkiPlayground::motors_callback, this);
 
 #ifdef reflex
@@ -431,22 +424,18 @@ public:
         fcoord = fopen("coordReflex.tsv","wt");
 #endif
         
-        camera_pub_colour = nh.advertise<sensor_msgs::Image>("mybot/colour_camera/image_raw", 1);
-
-        explr_pub = nh.advertise<geometry_msgs::Twist>("mybot/limbic", 1); //just used because its native and has multiple float fields, maybe find a better one
-       
-
+        
 
         //Reversal publishers
         
-        reward_publish = nh.advertise<std_msgs::Float32>("mybot/isRewarded",1);
+        //reward_publish = nh.advertise<std_msgs::Float32>("mybot/isRewarded",1);
         placeG_publish = nh.advertise<std_msgs::Float32>("mybot/inPlaceGreen",1);
         placeB_publish = nh.advertise<std_msgs::Float32>("mybot/inPlaceBlue",1);
-        distanceG_publish = nh.advertise<std_msgs::Float32>("mybot/distGreen",1);
-        distanceB_publish = nh.advertise<std_msgs::Float32>("mybot/distBlue",1);
+        //distanceG_publish = nh.advertise<std_msgs::Float32>("mybot/distGreen",1);
+        //distanceB_publish = nh.advertise<std_msgs::Float32>("mybot/distBlue",1);
         //seenR_publish = nh.advertise<enki_ros_pck::Sight>("mybot/seeReward",1);
-        on_contact_blue_publish = nh.advertise<std_msgs::Float32>("mybot/contactBlue", 1);
-        on_contact_green_publish = nh.advertise<std_msgs::Float32>("mybot/contactGreen", 1);      
+        //on_contact_blue_publish = nh.advertise<std_msgs::Float32>("mybot/contactBlue", 1);
+        //on_contact_green_publish = nh.advertise<std_msgs::Float32>("mybot/contactGreen", 1);      
         
 
         racer = new Racer(nInputs);
@@ -488,7 +477,6 @@ public:
         world->addObject(pelletR);
         //world->addObject(blue_pellet.name);
 
-        //maybe create own setColour - can use macros so easier to track...
     }
 
     ~EnkiPlayground(){
@@ -500,22 +488,15 @@ public:
         camera_pub.shutdown();
         camera_pub_colour.shutdown();
     }
-	// here we do all the behavioural computations
-	// as an example: line following and obstacle avoidance
+	
 
 
 //this is called every 30Hz
 virtual void sceneCompletedHook()
 	{
-        /*
-        int errorGain = ERRORGAIN;
-		double leftGround = racer->groundSensorLeft.getValue();
-		double rightGround = racer->groundSensorRight.getValue();
-        double error = (leftGround - rightGround);
-        */
-
-        //setup the ros message
+        //CAMERA SETUP=======================================================================
         sensor_msgs::Image msg;
+       
         msg.header.seq = countRuns;
         msg.header.frame_id = "camera_link";
         msg.height = 1;
@@ -525,15 +506,7 @@ virtual void sceneCompletedHook()
         msg.step = 1;
         msg.data.push_back(uint8_t(racer->lineSensors[0]->getValue()*255.0));
 
-        line_sensor_pub[0].publish(msg);
-
-        for(int i=1; i<8; i++){
-
-            msg.data.pop_back();
-            msg.data.push_back(uint8_t(racer->lineSensors[i]->getValue()*255.0));
-            line_sensor_pub[i].publish(msg);
-        }
-
+    
         //publish the camera stuff
         msg.height = 9;
         msg.width = 9;
@@ -564,34 +537,34 @@ virtual void sceneCompletedHook()
 		  msg.data.push_back(uint8_t(racer->rgbcamera.image[i].a()*255.0));
 	    }
 	    msg.data.resize(9*4*9);
+        
    	    camera_pub_colour.publish(msg);
+
+        //LIMBIC SYSTEM===========================================================================
+        //Limbic-system instance from reversal-5ht  
         Limbic_system ls;
-        //ROS_INFO("%f", reward);
         ls.doStep(step, reward,green_place,blue_place,contactGreen, contactBlue,green_distance,blue_distance,green_reward_distance,blue_reward_distance);
         step++;
         ROS_INFO("%d", step);
-        //signal test: reward (y) green_place(y) blue_place(y) contactGreen(y) contactBlue(y) green_distance(y) blue_distance(y) green_reward_distance(y) blue_distance_reward(y)
-
+        
         explore_left =ls.getExploreLeft();
 	    explore_right =ls.getExploreRight(); 
        
         float Greensw=ls.getGreenOutput() * 2;
 		float Bluesw=ls.getBlueOutput() * 2;
-		//ROS_INFO("%f", Bluesw);
-
+        
+        //Limbic system ROS Publishing
         geometry_msgs::Twist limbic;
         limbic.angular.x = explore_left;
         limbic.angular.y = explore_right;
         limbic.linear.x = Greensw;
-        limbic.linear.y = Bluesw; //these stop updating after reward... why?
-
-        
+        limbic.linear.y = Bluesw;
         explr_pub.publish(limbic);       
 
 
-        //make this a function
-        // return pellet to start point in case of collision (shouldnt happen but sometimes does)
-        if ( pelletL->speed.x != 0)
+        //MISC=========================================================================================
+        
+        if ( pelletL->speed.x != 0) // return pellet to start point in case of collision (shouldnt happen but sometimes does)
         {
             pelletL->speed.x=0;
             pelletL->speed.y=0;
@@ -605,12 +578,9 @@ virtual void sceneCompletedHook()
             pelletR->pos = Point((pelletBx),(pelletBy));
         }
         
+        //LIMBIC-SYSTEM INPUTS
         
-         
-        //assign values to msgs
-        //rewardBool(racer, pelletL, reward, maxx, maxy); // calls rewardBool function which checks if rat has received reward (located in ReversalSignals.h)
-        
-        switch (switch_toggle)
+        switch (switch_toggle) //deals with reward switches whether done by timestep or rewards received
         {
        
         case 1: //timesteps
@@ -650,7 +620,7 @@ virtual void sceneCompletedHook()
             break;
         }
         
-        switch (rewardSet)
+        switch (rewardSet) //Switches rewards
         {
         case 0: //Blue
             reward = rewardBoolB(racer, pelletR, maxx, maxy, BLUEPELLETX, BLUEPELLETY, 35);
@@ -659,8 +629,9 @@ virtual void sceneCompletedHook()
             reward = rewardBoolG(racer, pelletL, maxx, maxy, GREENPELLETX, GREENPELLETY, 35);
             break;
         }
-        //reward = rewardBool(racer, pelletR, maxx, maxy, BLUEPELLETX, BLUEPELLETY, 35);
-        green_distance = getDistanceGreen(racer, pelletL, maxx, maxy); //calls function which checks distance from rat to reward, sets seen.distance. (located in ReversalSignals.h)
+        
+        
+        green_distance = getDistanceGreen(racer, pelletL, maxx, maxy); 
         blue_distance = getDistanceBlue(racer, pelletR, maxx, maxy);
         green_reward_distance = getDistanceRewardGreen(racer, pelletL, pelletGx, pelletGy, 35);
         blue_reward_distance = getDistanceRewardBlue(racer, pelletR, pelletBx, pelletBy, 35);
@@ -668,49 +639,36 @@ virtual void sceneCompletedHook()
         contactBlue = on_contact_direction_blue(racer, pelletR);
         contactGreen = on_contact_direction_green(racer, pelletL);
 
-
-        //seenBool(seenG, msg, GREEN); // calls function which checks is rat can see reward, sets seen.sight. (located in ReversalSignals.h)
-        //seenBool(seenB, msg, BLUE);
-
         green_place = placeBoolGreen(racer, GREENPELLETX, GREENPELLETY, 35, maxx, maxy); // (msg, enki-racer, x coord of centre of place, y coord of centre of place, radius of place, max x coord of simulator, max y cord of simulator) call function which checks if rat is in defined place, sets reward.data. (located in ReversalSignals.h)
         blue_place = placeBoolBlue(racer, BLUEPELLETX, BLUEPELLETY, 35, maxx, maxy);
        
-        //---------------------------------REVERSAL DATA PUBLISHING------------------------------------------------
-        //name ros msgs
-        
+        //LIMBIC DATA PUBLISHING=============================================================================
+
+        //ROS msgs        
         std_msgs::Float32 rewardSig;
-        rewardSig.data = reward; //bool message for if rat is at reward
+        rewardSig.data = reward; 
         std_msgs::Float32 placeG;
-        placeG.data = green_place; // bool message is rat is in defined place
+        placeG.data = green_place; 
         std_msgs::Float32 placeB;
         placeB.data = blue_place;
         std_msgs::Float32 on_contact_blue_sig;
-        on_contact_blue_sig.data = contactBlue; //float message for if rat is touching blue landmark (0 or 1)
+        on_contact_blue_sig.data = contactBlue; 
         std_msgs::Float32 on_contact_green_sig;
-        on_contact_green_sig.data = contactGreen; //float message for if rat is touching green landmark (0 or 1)
-        
-        //enki_ros_pck::Sight seenG; //bool and distance message for if rat sees green pellet and how far it is from green pellet
+        on_contact_green_sig.data = contactGreen;
         std_msgs::Float32 distanceG; 
-        //seenG.sight = green_sight;
         distanceG.data  = green_distance;
-        //enki_ros_pck::Sight seenB; //bool and distance message for if rat sees blue pellet and how far it is from blue pellet
         std_msgs::Float32 distanceB;
-        //seenB.sight = blue_sight;
         distanceB.data = blue_distance;
-        //seenB.distance = blue_distance;
-        enki_ros_pck::Sight seenR; //bool and distance message for if rat sees reward and how far it is from reward
-        //seenR.sight = add some logic for this
-       
-        //Publish msgs
         
-        reward_publish.publish(rewardSig); //publishes data about if rat can see reward
+        //Publish msgs
+        //reward_publish.publish(rewardSig); //publishes data about if rat can see reward
         placeG_publish.publish(placeG); //publishes data about if rat is in defined place
         placeB_publish.publish(placeB); //publishes data about if rat is in defined place
-        distanceG_publish.publish(distanceG); //publishes data about if rat can see reward and how far from reward it is.
-        distanceB_publish.publish(distanceB);
+        //distanceG_publish.publish(distanceG); //publishes data about if rat can see reward and how far from reward it is.
+        //distanceB_publish.publish(distanceB);
         //seenR_publish.publish(seenR);
-        on_contact_blue_publish.publish(on_contact_blue_sig);
-        on_contact_green_publish.publish(on_contact_green_sig);
+        //on_contact_blue_publish.publish(on_contact_blue_sig);
+        //on_contact_green_publish.publish(on_contact_green_sig);
         
         ros::spinOnce();
 
@@ -765,5 +723,3 @@ int main(int argc, char *argv[])
     return app.exec();
     return 0;
 }
-
-//dostep( rewardBool, placeBoolGreen, placeBoolBlue, on_contact_direction_green, on_contact_direction_blue, getDistanceGreen, getDistanceBlue, need visual_reward_gb )

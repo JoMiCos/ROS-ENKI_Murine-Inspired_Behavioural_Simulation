@@ -244,6 +244,7 @@ void calculateMotorSpeedReward(geometry_msgs::Twist& msg)//Braitenberg steering 
 
 void ratExplore(geometry_msgs::Twist& vel)
 {	
+	//ROS_INFO("%f", blue_sight);
 	if(sensor_values_stuck/255.0 > 0.9) 
 	{ // if it is almost white (the colour of the walls) (0.0-1.0 is black-white)
 		vel.angular.z = 0.7; //turn could be randomised to make look more realistic but this is functional
@@ -389,7 +390,7 @@ int main(int argc, char **argv){
 
 	//ROS PUBLISH
 	ros::Publisher vel_pub = nh.advertise<geometry_msgs::Twist>("mybot/cmd_vel", 1);
-	ros::Rate loop_rate(30);//match 30Hz ENKI loop
+	ros::Rate loop_rate(60); //twice refresh rate of ENKI loop as if ROS loop fails to update before ENKI it causes as crash
 	geometry_msgs::Twist vel;
 	
 	while(ros::ok()){
