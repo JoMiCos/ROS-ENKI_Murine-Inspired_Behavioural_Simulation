@@ -50,6 +50,10 @@ The following method is specific for Ubuntu18.04(Bionic) platform.
         sudo rosdep init
         rosdep update
         
+### Install qt5
+
+sudo apt-get install qt5-default
+```
 
 ### Install Enki Library
 
