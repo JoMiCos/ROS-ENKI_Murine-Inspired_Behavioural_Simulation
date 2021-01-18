@@ -59,6 +59,7 @@
 #include "parameters.h"
 #include <chrono>
 #include "PhysicalEngine.h"
+#include "Limbic-object.h"
 
 #define reflex
 
@@ -108,6 +109,8 @@ static int switch_toggle = STEPS_SWITCH; //starts reversal after steps_before_sw
 //static int switch_toggle = REWARDS_SWITCH; //starts reversal after rewards_before_switch number of correct choices
 static uint8_t rewards_before_switch = 10; 
 static uint32_t steps_before_switch = 12500; //30 steps per second
+
+static bool limbic_system_inst = 1;
 
 int countSteps=0;
 int countRuns=0;
@@ -541,17 +544,22 @@ virtual void sceneCompletedHook()
    	    camera_pub_colour.publish(msg);
 
         //LIMBIC SYSTEM===========================================================================
-        //Limbic-system instance from reversal-5ht  
-        Limbic_system ls;
-        ls.doStep(step, reward,green_place,blue_place,contactGreen, contactBlue,green_distance,blue_distance,green_reward_distance,blue_reward_distance);
+        //Limbic-system instance - from reversal-5ht  
+        if (limbic_system_inst == 1)
+        {
+            
+            limbic_system_inst=0;
+        }
+        //Limbic_system ls;
+        limbsys.doStep(step, reward,green_place,blue_place,contactGreen, contactBlue,green_distance,blue_distance,green_reward_distance,blue_reward_distance);
         step++;
         ROS_INFO("%d", step);
         
-        explore_left =ls.getExploreLeft();
-	    explore_right =ls.getExploreRight(); 
+        explore_left =limbsys.getExploreLeft();
+	    explore_right =limbsys.getExploreRight(); 
        
-        float Greensw=ls.getGreenOutput() * 2;
-		float Bluesw=ls.getBlueOutput() * 2;
+        float Greensw=limbsys.getGreenOutput() * 2;
+		float Bluesw=limbsys.getBlueOutput() * 2;
         
         //Limbic system ROS Publishing
         geometry_msgs::Twist limbic;
