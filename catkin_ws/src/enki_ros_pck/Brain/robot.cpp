@@ -619,7 +619,7 @@ void Robot::react(int step,int collision) {
     //create subscriber file which sets values of: reward, placefield1,placefield2,on_contact_direction_Green, on_contact_direction_Blue, visual_landmark_Green, visual_landmark_Blue, visual_reward_Green, visual_reward_Blue
 	//pass values to here via class?
 	
-	ROS_INFO("%d", reward);
+	//ROS_INFO("%d", reward);
 
 	//float reward=0;
 	float xp;

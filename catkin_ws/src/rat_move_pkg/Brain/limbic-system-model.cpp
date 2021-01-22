@@ -16,25 +16,25 @@ Limbic_system::Limbic_system()
 	flog = fopen("log.dat","wt");
 
 	// filter which creates a default behaviour when touching the landmarks
-	on_contact_direction_Green_filter = new SecondOrderLowpassFilter(0.1);
-	on_contact_direction_Blue_filter = new SecondOrderLowpassFilter(0.1);
+	on_contact_direction_Green_filter = new SecondOrderLowpassFilter(0.5);
+	on_contact_direction_Blue_filter = new SecondOrderLowpassFilter(0.5);
 
 	// filter which smears out the visual input in time as a 1st attempt
 	// to create persistent activity in the cortex
-	visual_direction_Green_mPFC_filter = new SecondOrderLowpassFilter(0.01);
-	visual_direction_Blue_mPFC_filter = new SecondOrderLowpassFilter(0.01);
+	visual_direction_Green_mPFC_filter = new SecondOrderLowpassFilter(0.5);
+	visual_direction_Blue_mPFC_filter = new SecondOrderLowpassFilter(0.5);
 
 	// self inhibition VTA
-	VTA_forwardinhibition = new SecondOrderLowpassFilter(0.01);
+	VTA_forwardinhibition = new SecondOrderLowpassFilter(0.5);
 
-	placefield_Green_filter = new SecondOrderLowpassFilter(0.1);
-	placefield_Blue_filter = new SecondOrderLowpassFilter(0.1);
+	placefield_Green_filter = new SecondOrderLowpassFilter(0.5);
+	placefield_Blue_filter = new SecondOrderLowpassFilter(0.5);
 
-	reward_filter = new SecondOrderLowpassFilter(0.1);
+	reward_filter = new SecondOrderLowpassFilter(0.5);
 
-	DRNto5HTrelease = new SecondOrderLowpassFilter(0.001);
+	DRNto5HTrelease = new SecondOrderLowpassFilter(0.5);
 
-	OFCNeuron = new CtxNeuron(learning_rate_OFC,learning_rate_OFC * 0.1);
+	OFCNeuron = new CtxNeuron(learning_rate_OFC,learning_rate_OFC * 0.5);
 	// OFCNeuron->addInput(placefieldGreen);
 	// OFCNeuron->addInput(placefieldBlue);
 	OFCNeuron->addInput(visual_direction_Green_trace);
@@ -135,7 +135,7 @@ void Limbic_system::doStep(float _reward,
 	serotoninConcentration = DRNto5HTrelease->filter(DRN);
 
 	// the VTA gets its activity from the LH and is ihibited by the RMTg
-	VTA = (LH + VTA_baseline_activity) / (1+(RMTg + VTA_forwardinhibition->filter(OFC*0.1)) * shunting_inhibition_factor);
+	VTA = (LH + VTA_baseline_activity) / (1+(RMTg + VTA_forwardinhibition->filter(OFC*0.5)) * shunting_inhibition_factor);
 
 	// this is also generated in the mPFC and then fed down to the NAcc core with the command
 	// to explore

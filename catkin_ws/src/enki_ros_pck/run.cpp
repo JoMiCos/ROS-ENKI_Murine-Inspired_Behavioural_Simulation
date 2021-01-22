@@ -105,8 +105,8 @@ uint8_t rewardcount{0};
 
 //Toggle reward switch after time-steps or rewards received
 uint8_t toggle_n=1;
-static int switch_toggle = STEPS_SWITCH; //starts reversal after steps_before_switch number of time steps (30Hz)
-//static int switch_toggle = REWARDS_SWITCH; //starts reversal after rewards_before_switch number of correct choices
+//static int switch_toggle = STEPS_SWITCH; //starts reversal after steps_before_switch number of time steps (30Hz)
+static int switch_toggle = REWARDS_SWITCH; //starts reversal after rewards_before_switch number of correct choices
 static uint8_t rewards_before_switch = 10; 
 static uint32_t steps_before_switch = 12500; //30 steps per second
 
@@ -399,9 +399,9 @@ protected:
     //publisher to is_Rewarded (if rat gets reward)
     //ros::Publisher reward_publish;
     //publisher to distG (distance from Green pellet)
-    //ros::Publisher distanceG_publish;
+    ros::Publisher distanceG_publish;
     //publisher to distB (distance from Blue pellet)
-    //ros::Publisher distanceB_publish;
+    ros::Publisher distanceB_publish;
     //publisher for contactBLue
     //ros::Publisher on_contact_blue_publish;
     //ros::Publisher on_contact_green_publish;
@@ -434,8 +434,8 @@ public:
         //reward_publish = nh.advertise<std_msgs::Float32>("mybot/isRewarded",1);
         placeG_publish = nh.advertise<std_msgs::Float32>("mybot/inPlaceGreen",1);
         placeB_publish = nh.advertise<std_msgs::Float32>("mybot/inPlaceBlue",1);
-        //distanceG_publish = nh.advertise<std_msgs::Float32>("mybot/distGreen",1);
-        //distanceB_publish = nh.advertise<std_msgs::Float32>("mybot/distBlue",1);
+        distanceG_publish = nh.advertise<std_msgs::Float32>("mybot/distGreen",1);
+        distanceB_publish = nh.advertise<std_msgs::Float32>("mybot/distBlue",1);
         //seenR_publish = nh.advertise<enki_ros_pck::Sight>("mybot/seeReward",1);
         //on_contact_blue_publish = nh.advertise<std_msgs::Float32>("mybot/contactBlue", 1);
         //on_contact_green_publish = nh.advertise<std_msgs::Float32>("mybot/contactGreen", 1);      
@@ -558,8 +558,8 @@ virtual void sceneCompletedHook()
         explore_left =limbsys.getExploreLeft();
 	    explore_right =limbsys.getExploreRight(); 
        
-        float Greensw=limbsys.getGreenOutput() * 2;
-		float Bluesw=limbsys.getBlueOutput() * 2;
+        float Greensw=limbsys.getGreenOutput();
+		float Bluesw=limbsys.getBlueOutput();
         
         //Limbic system ROS Publishing
         geometry_msgs::Twist limbic;
@@ -672,8 +672,8 @@ virtual void sceneCompletedHook()
         //reward_publish.publish(rewardSig); //publishes data about if rat can see reward
         placeG_publish.publish(placeG); //publishes data about if rat is in defined place
         placeB_publish.publish(placeB); //publishes data about if rat is in defined place
-        //distanceG_publish.publish(distanceG); //publishes data about if rat can see reward and how far from reward it is.
-        //distanceB_publish.publish(distanceB);
+        distanceG_publish.publish(distanceG); //publishes data about if rat can see reward and how far from reward it is.
+        distanceB_publish.publish(distanceB);
         //seenR_publish.publish(seenR);
         //on_contact_blue_publish.publish(on_contact_blue_sig);
         //on_contact_green_publish.publish(on_contact_green_sig);

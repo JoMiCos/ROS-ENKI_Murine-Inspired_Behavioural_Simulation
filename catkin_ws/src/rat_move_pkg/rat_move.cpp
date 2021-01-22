@@ -237,6 +237,7 @@ void calculateMotorSpeedGreen(geometry_msgs::Twist& msg)//Braitenberg steering i
 
 void calculateMotorSpeedReward(geometry_msgs::Twist& msg)//Braitenberg steering if rat decides to move to reward (red) pellet
 {	
+		printf("%s", "reward");
 		double error = (reward_sensor_values[6]/255.0) + 2*(reward_sensor_values[7]/255.0) + 3*(reward_sensor_values[8]/255.0) - 3*(reward_sensor_values[0]/255.0) - 2*(reward_sensor_values[1]/255.0) - (reward_sensor_values[2]/255.0);
 		msg.angular.z = -error*0.05; //if -ve turn left when see red, if +ve turn right when see red
 		msg.linear.y = 1; //if non-zero, rat moves
@@ -244,7 +245,8 @@ void calculateMotorSpeedReward(geometry_msgs::Twist& msg)//Braitenberg steering 
 
 void ratExplore(geometry_msgs::Twist& vel)
 {	
-	//ROS_INFO("%f", blue_sight);
+	//ROS_INFO("%f", Greensw); //for checking attraction levels <v
+	//ROS_INFO("%f", Bluesw);
 	if(sensor_values_stuck/255.0 > 0.9) 
 	{ // if it is almost white (the colour of the walls) (0.0-1.0 is black-white)
 		vel.angular.z = 0.7; //turn could be randomised to make look more realistic but this is functional
@@ -376,7 +378,7 @@ int main(int argc, char **argv){
 	eyes[26] = nh.subscribe("mybot/colour_camera/image_raw", 1, reward_callback8);
 	
 	
-	limbic_signals[0] = nh.subscribe("mybot/inPlaceBlue",1, bluePlaceCallback);
+	limbic_signals[0] = nh.subscribe("mybot/inPlaceBlue", 1, bluePlaceCallback);
 	limbic_signals[1] = nh.subscribe("mybot/inPlaceGreen", 1, greenPlaceCallback);
 	//limbic_signals[2] = nh.subscribe("mybot/isRewarded", 1, rewardSignalCallback);
 	//limbic_signals[3] = nh.subscribe("mybot/distBlue", 1, seeBlueLandmarkCallback);

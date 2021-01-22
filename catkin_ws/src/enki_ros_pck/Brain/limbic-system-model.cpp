@@ -47,7 +47,7 @@ Limbic_system::Limbic_system()
 	placefield_Green_filter = new SecondOrderLowpassFilter(0.1);
 	placefield_Blue_filter = new SecondOrderLowpassFilter(0.1);
 
-	reward_filter = new SecondOrderLowpassFilter(0.1);
+	reward_filter = new SecondOrderLowpassFilter(0.5);
 
 	DRNto5HTrelease = new SecondOrderLowpassFilter(0.001);
 
